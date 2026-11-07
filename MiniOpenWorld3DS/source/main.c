@@ -257,10 +257,11 @@ int main(void) {
             if(!(keys&(KEY_UP|KEY_DOWN))) carVelocity*=.96f;
             if(fabsf(carVelocity)<.001f) carVelocity=0.0f;
             /* Steering direction corrected to match the player's left/right input. */
-            if(keys&KEY_LEFT) carYaw+=carVelocity*.10f;
-            if(keys&KEY_RIGHT) carYaw-=carVelocity*.10f;
-            playerX+=sinf(carYaw)*carVelocity;
-            playerZ-=cosf(carYaw)*carVelocity;
+            if(keys&KEY_LEFT) carYaw-=carVelocity*.10f;
+            if(keys&KEY_RIGHT) carYaw+=carVelocity*.10f;
+            playerX-=sinf(carYaw)*carVelocity;
+            /* The tested build moved opposite to the forward control; correct its axis. */
+            playerZ+=cosf(carYaw)*carVelocity;
         } else {
             /* Walk relative to the camera: UP always means toward the view direction. */
             float forwardX=-sinf(cameraYaw), forwardZ=-cosf(cameraYaw);
@@ -269,8 +270,8 @@ int main(void) {
             if(keys&KEY_UP) { moveX+=forwardX; moveZ+=forwardZ; }
             if(keys&KEY_DOWN) { moveX-=forwardX; moveZ-=forwardZ; }
             /* Screen-left is the negative camera-right vector; screen-right is positive. */
-            if(keys&KEY_LEFT) { moveX-=rightX; moveZ-=rightZ; }
-            if(keys&KEY_RIGHT) { moveX+=rightX; moveZ+=rightZ; }
+            if(keys&KEY_LEFT) { moveX+=rightX; moveZ+=rightZ; }
+            if(keys&KEY_RIGHT) { moveX-=rightX; moveZ-=rightZ; }
             /* Keep diagonal movement at the same speed as straight movement. */
             float moveLength=sqrtf(moveX*moveX+moveZ*moveZ);
             if(moveLength>0.001f) {
