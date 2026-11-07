@@ -1,0 +1,49 @@
+name: Prepare real Bayreuth map data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch OpenStreetMap roads and building footprints
+        run: python3 tools/fetch_bayreuth_map.py bayreuth-osm.geojson
+
+      - name: Convert map into 3DS spatial tiles
+        run: python3 tools/build_bayreuth_tiles.py bayreuth-osm.geojson bayreuth-tiles.bin
+
+      - name: Report map coverage and size
+        run: |
+          python3 - <<'PY'
+          import json, os, struct
+          with open("bayreuth-osm.geojson", encoding="utf-8") as f:
+              data = json.load(f)
+          roads = sum(x.get("properties", {}).get("kind") == "road" for x in data["features"])
+          buildings = sum(x.get("properties", {}).get("kind") == "building" for x in data["features"])
+          with open("bayreuth-tiles.bin", "rb") as f:
+              header = struct.unpack("<4sHHddfI", f.read(32))
+          print(f"OSM timestamp: {data.get('osm_timestamp')}")
+          print(f"Road ways: {roads}")
+          print(f"Building footprints: {buildings}")
+          print(f"3DS tiles: {header[-1]}")
+          print(f"GeoJSON: {os.path.getsize('bayreuth-osm.geojson'):,} bytes")
+          print(f"Tile data: {os.path.getsize('bayreuth-tiles.bin'):,} bytes")
+          PY
+
+      - name: Upload prepared Bayreuth map data
+        uses: actions/upload-artifact@v4
+        with:
+          name: BAYREUTH-OSM-MAP-DATA
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            bayreuth-osm.geojson
+            bayreuth-tiles.bin
