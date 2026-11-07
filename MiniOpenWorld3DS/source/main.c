@@ -75,26 +75,41 @@ static void updateAudio(void){
 }
 
 static void city(void){
- n=0;
- /* GPU diagnostic: three large triangles with independent primary colors. */
- T(P(35,205,.5f,1.0f,0.0f,0.0f),P(125,45,.5f,1.0f,0.0f,0.0f),P(215,205,.5f,1.0f,0.0f,0.0f));
- T(P(145,205,.5f,0.0f,1.0f,0.0f),P(235,45,.5f,0.0f,1.0f,0.0f),P(325,205,.5f,0.0f,1.0f,0.0f));
- T(P(255,205,.5f,1.0f,1.0f,0.0f),P(345,45,.5f,1.0f,1.0f,0.0f),P(395,205,.5f,1.0f,1.0f,0.0f));
+ n=0; Q(0,0,400,240,.9f,.27f,.65f,.32f); Q(0,104,400,50,.8f,.23f,.25f,.29f); Q(172,0,52,240,.79f,.23f,.25f,.29f);
+ for(int x=8;x<400;x+=48)Q(x,127,22,3,.7f,.95f,.84f,.48f);
+ house(28,92,60,55,.82f,.48f,.27f); house(105,92,62,69,.53f,.68f,.84f); house(244,92,62,58,.8f,.57f,.35f); house(324,92,54,75,.71f,.49f,.74f);
+ house(32,220,60,55,.78f,.68f,.5f); house(108,220,56,46,.5f,.73f,.56f); house(260,220,58,55,.82f,.55f,.42f); house(333,220,48,46,.55f,.66f,.82f);
+ for(int i=0;i<4;i++){float x=18+i*92;Q(x+8,91,5,22,.48f,.4f,.25f,.12f);T(P(x,92,.4f,.12f,.5f,.2f),P(x+23,92,.4f,.12f,.5f,.2f),P(x+12,66,.4f,.18f,.68f,.25f));}
+ Q(185,168,30,14,.35f,.12f,.5f,.9f); Q(192,160,17,9,.34f,.48f,.8f,1);
+ /* Small fictional shop facade: warm wall, awning, windows and entrance. */
+ Q(242,158,48,27,.42f,.91f,.76f,.48f); Q(239,154,54,7,.38f,.25f,.55f,.78f);
+ Q(247,166,12,10,.36f,.48f,.78f,.88f); Q(273,166,12,10,.36f,.48f,.78f,.88f);
+ Q(261,169,9,16,.35f,.38f,.22f,.14f); Q(251,151,28,4,.34f,.98f,.84f,.35f);
 }
 int main(void){
  gfxInitDefault(); consoleInit(GFX_BOTTOM,NULL); startAudio(); if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)){if(audioReady)ndspExit();gfxExit();return 1;}
  target=C3D_RenderTargetCreate(240,400,GPU_RB_RGBA8,GPU_RB_DEPTH24_STENCIL8); C3D_RenderTargetSetOutput(target,GFX_TOP,GFX_LEFT,XFER);
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
- C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_CONSTANT,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);C3D_TexEnvColor(env,0xFF0000FF);posVbo=linearAlloc(sizeof(positions));colorVbo=linearAlloc(sizeof(colors));city();uploadVertices();C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,posVbo,sizeof(Pos),1,0x0);BufInfo_Add(bi,colorVbo,sizeof(Clr),1,0x1);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
- printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HGPU COLOR DIAGNOSTIC");printf("\x1b[7;1HRED / GREEN / YELLOW");printf("\x1b[9;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
+ C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);posVbo=linearAlloc(sizeof(positions));colorVbo=linearAlloc(sizeof(colors));city();uploadVertices();C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,posVbo,sizeof(Pos),1,0x0);BufInfo_Add(bi,colorVbo,sizeof(Clr),1,0x1);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
+ printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1H3D CAMERA: NEXT UPDATE");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
  while(aptMainLoop()){
   hidScanInput();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
-  /* Keep this diagnostic completely static: only the three test triangles are drawn. */
-  city();
+  if(down&KEY_A){if(riding==1){riding=0;scooterX=playerX;scooterY=playerY;}else if(riding==2){riding=0;carX=playerX;carY=playerY;}else{float ds=(playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY);float dc=(playerX-carX)*(playerX-carX)+(playerY-carY)*(playerY-carY);if(ds<dc&&ds<625.0f)riding=1;else if(dc<625.0f)riding=2;}}
+  float speed=riding==2?3.2f:(riding==1?2.5f:1.6f);
+  if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
+  if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
+  if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
+  if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
+  if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;
+   npc2X+=0.16f*npc2Direction;if(npc2X>366.0f)npc2Direction=-1;if(npc2X<310.0f)npc2Direction=1;}
+  if(riding==1){scooterX=playerX;scooterY=playerY;}else if(riding==2){carX=playerX;carY=playerY;}
+  city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
+  scooter(scooterX,scooterY);car(carX,carY);
+  if(!riding)player();
   uploadVertices();
-  printf("\x1b[14;1HGPU COLOR TEST");
-  C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x202020FF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
+  printf("\x1b[14;1HVEHICLE: %-18s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
+  C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
  }
  linearFree(posVbo);linearFree(colorVbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();if(audioReady){ndspExit();linearFree(audioData);}gfxExit();return 0;
 }
