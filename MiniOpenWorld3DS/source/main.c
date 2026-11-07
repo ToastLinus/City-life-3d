@@ -341,12 +341,14 @@ int main(void) {
     if(ndspInit()==0) {
         soundSamples=(s16*)linearAlloc(4096*sizeof(s16));
         if(soundSamples) audioReady=1;
+        ndspSetOutputMode(NDSP_OUTPUT_STEREO);
         ndspChnReset(0);
         ndspSetMasterVol(1.0f);
+        ndspChnSetPaused(0,false);
         ndspChnSetInterp(0,NDSP_INTERP_LINEAR);
         ndspChnSetRate(0,22050.0f);
         ndspChnSetFormat(0,NDSP_FORMAT_MONO_PCM16);
-        playTone(660.0f,.16f,.65f);
+        playTone(880.0f,.24f,.90f);
     }
     consoleInit(GFX_BOTTOM,NULL);
     if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)) { gfxExit(); return 1; }
@@ -383,6 +385,7 @@ int main(void) {
     printf("\x1b[9;1HA: Enter / leave vehicle");
     printf("\x1b[9;1HCar: UP gas / DOWN brake");
     printf("\x1b[10;1HSTART: Exit");
+    printf("\x1b[11;1HAUDIO: %s",audioReady?"INITIALIZED":"UNAVAILABLE");
 
     while(aptMainLoop()) {
         hidScanInput();
@@ -504,6 +507,7 @@ int main(void) {
         person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0,-1.5708f);
         person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0,-1.5708f);
         person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
+        /* Only the player's own scooter is spawned here. There is no NPC traffic scooter. */
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
         vehicle(carX,carZ,.86f,.25f,.18f);
