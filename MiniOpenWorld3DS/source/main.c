@@ -4,15 +4,21 @@
 #include <stdio.h>
 #include <math.h>
 #include "vshader_shbin.h"
+#include "bayreuth_tiles.h"
 
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-#define MAX_VERTICES 10000
+#define MAX_VERTICES 60000
+#define MAX_MAP_VERTICES 30000
 
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 typedef struct { float x,y,z; } Pos;
 typedef struct { float r,g,b,a; } Clr;
 
 static Vtx vertices[MAX_VERTICES];
+static Vtx bayreuthVertices[MAX_MAP_VERTICES];
+static int bayreuthVertexCount=0;
+static int bayreuthTileX=999999, bayreuthTileZ=999999;
+static int bayreuthReady=0;
 static Pos positions[MAX_VERTICES];
 static Clr colors[MAX_VERTICES];
 static int vertexCount=0;
@@ -325,6 +331,60 @@ static void buildCity(void) {
         box(px,.34f,3.15f,.28f,.24f,.28f,.92f,.42f,.56f);
     }
 }
+
+static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint *points,uint16_t count,void *user) {
+    (void)user;
+    if(tx<bayreuthTileX-1 || tx>bayreuthTileX+1 || tz<bayreuthTileZ-1 || tz>bayreuthTileZ+1) return 0;
+    if(kind==BT3D_KIND_ROAD) {
+        for(uint16_t i=1;i<count;i++) {
+            float x0=(float)tx*256.0f+(float)points[i-1].x_quarter_m*.25f;
+            float z0=(float)tz*256.0f+(float)points[i-1].z_quarter_m*.25f;
+            float x1=(float)tx*256.0f+(float)points[i].x_quarter_m*.25f;
+            float z1=(float)tz*256.0f+(float)points[i].z_quarter_m*.25f;
+            float dx=x1-x0,dz=z1-z0,len=sqrtf(dx*dx+dz*dz);
+            if(len<.05f) continue;
+            float ox=-dz/len*2.6f,oz=dx/len*2.6f;
+            quad(V(x0+ox,.012f,z0+oz,.19f,.20f,.22f),V(x1+ox,.012f,z1+oz,.19f,.20f,.22f),V(x1-ox,.012f,z1-oz,.19f,.20f,.22f),V(x0-ox,.012f,z0-oz,.19f,.20f,.22f));
+            if(vertexCount>MAX_MAP_VERTICES-12) return 0;
+        }
+    } else if(kind==BT3D_KIND_BUILDING && count>=3) {
+        float bx=(float)tx*256.0f,bz=(float)tz*256.0f;
+        for(uint16_t i=1;i+1<count;i++) {
+            float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
+            float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
+            float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
+            tri(V(ax,4.0f,az,.66f,.48f,.34f),V(px,4.0f,pz,.72f,.55f,.40f),V(qx,4.0f,qz,.62f,.44f,.31f));
+            if(vertexCount>MAX_MAP_VERTICES-18) return 0;
+        }
+        for(uint16_t i=0;i<count;i++) {
+            uint16_t j=(uint16_t)((i+1)%count);
+            float ax=bx+(float)points[i].x_quarter_m*.25f,az=bz+(float)points[i].z_quarter_m*.25f;
+            float px=bx+(float)points[j].x_quarter_m*.25f,pz=bz+(float)points[j].z_quarter_m*.25f;
+            quad(V(ax,.02f,az,.48f,.39f,.31f),V(px,.02f,pz,.48f,.39f,.31f),V(px,4.0f,pz,.66f,.52f,.39f),V(ax,4.0f,az,.66f,.52f,.39f));
+            if(vertexCount>MAX_MAP_VERTICES-18) return 0;
+        }
+    }
+    return 0;
+}
+static void rebuildBayreuthMap(void) {
+    FILE *file; Bt3dMap map; Bt3dPoint points[4096];
+    int saved=vertexCount;
+    bayreuthTileX=(int)floorf(playerX/256.0f); bayreuthTileZ=(int)floorf(playerZ/256.0f);
+    vertexCount=0;
+    file=fopen("romfs:/bayreuth-tiles.bin","rb");
+    if(file && bt3d_open(file,&map)==0) {
+        while(map.tiles_read<map.tile_count) {
+            int result=bt3d_read_next_tile(file,&map,points,4096,addBayreuthFeature,NULL);
+            if(result<=0) break;
+        }
+        fclose(file);
+    }
+    bayreuthVertexCount=vertexCount;
+    if(bayreuthVertexCount>MAX_MAP_VERTICES) bayreuthVertexCount=MAX_MAP_VERTICES;
+    memcpy(bayreuthVertices,vertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
+    vertexCount=saved; bayreuthReady=(bayreuthVertexCount>0);
+}
+
 static void uploadVertices(void) {
     for(int i=0;i<vertexCount;i++) {
         positions[i]=(Pos){vertices[i].x,vertices[i].y,vertices[i].z};
@@ -338,6 +398,7 @@ static void uploadVertices(void) {
 
 int main(void) {
     gfxInitDefault();
+    romfsInit();
     if(ndspInit()==0) {
         soundSamples=(s16*)linearAlloc(4096*sizeof(s16));
         if(soundSamples) audioReady=1;
@@ -500,7 +561,13 @@ int main(void) {
             if(playerJump<=0.0f) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         }
 
-        buildCity();
+        if(!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ) rebuildBayreuthMap();
+        vertexCount=0;
+        box(0.0f,-.18f,0.0f,600.0f,.25f,600.0f,.26f,.58f,.29f);
+        if(bayreuthReady && vertexCount+bayreuthVertexCount<MAX_VERTICES) {
+            memcpy(&vertices[vertexCount],bayreuthVertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
+            vertexCount+=bayreuthVertexCount;
+        }
         person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f);
         person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f);
         person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f);
@@ -556,6 +623,7 @@ int main(void) {
     DVLB_Free(dvlb);
     C3D_Fini();
     if(audioReady) { ndspExit(); linearFree(soundSamples); }
+    romfsExit();
     gfxExit();
     return 0;
 }
