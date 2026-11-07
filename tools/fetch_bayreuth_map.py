@@ -22,7 +22,7 @@ ENDPOINTS = [
 ]
 QUERY = r"""
 [out:json][timeout:180];
-rel["name"="Bayreuth"]["boundary"="administrative"]["admin_level"="8"]->.cityrel;
+rel["name"="Bayreuth"]["boundary"="administrative"]->.cityrel;
 .cityrel map_to_area -> .city;
 .cityrel out tags;
 (
@@ -103,7 +103,7 @@ def build_features(payload):
         if e.get("type") == "relation"
         and e.get("tags", {}).get("name") == "Bayreuth"
         and e.get("tags", {}).get("boundary") == "administrative"
-        and e.get("tags", {}).get("admin_level") == "8"
+        and e.get("tags", {}).get("admin_level") in ("6", "8")
     ]
     if not city_areas:
         raise RuntimeError(
