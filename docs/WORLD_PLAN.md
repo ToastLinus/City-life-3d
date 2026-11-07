@@ -79,7 +79,7 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 
 ## Status und verbindliche Meilensteine
 
-Der aktuelle Stand ist ein früher statischer 3D-Szenenprototyp: Er zeichnet eine bunte Stadtansicht, ist aber noch nicht begehbar und enthält noch keine spielbare Figur, Fahrzeugsteuerung, NPCs oder Laden-Interaktionen. Die CIA-Build-Pipeline ist im Repository eingerichtet, ihr erfolgreicher Lauf und ein installierbares CIA-Artefakt für dieses neue Projekt sind noch nicht bestätigt.
+Der aktuelle Stand ist ein früher 3D-Szenenprototyp. Im Code gibt es jetzt einen einfachen Platzhalter-Spieler und eine D-Pad-Bewegungssteuerung innerhalb des sichtbaren Testbereichs. Diese Änderung ist noch nicht durch einen erfolgreichen Build oder einen Test auf echter 3DS-Hardware bestätigt. Fahrzeuge, NPCs, Laden-Interaktionen und eine begehbare Welt mit Kollisionen fehlen weiterhin. Die CIA-Build-Pipeline ist im Repository eingerichtet; ein erfolgreich erzeugtes und getestetes CIA-Artefakt für dieses neue Projekt ist noch nicht bestätigt.
 
 ### Reihenfolge bis zur ersten spielbaren CIA
 1. Build-Pipeline zuverlässig kompilieren und eine gültige CIA erzeugen.
