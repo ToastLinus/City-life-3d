@@ -267,9 +267,9 @@ int main(void) {
             if(carVelocity<-.10f) carVelocity=-.10f;
             if(!(keys&(KEY_UP|KEY_DOWN))) carVelocity*=.96f;
             if(fabsf(carVelocity)<.001f) carVelocity=0.0f;
-            /* Steering direction corrected to match the player's left/right input. */
-            if(keys&KEY_LEFT) carYaw-=carVelocity*.10f;
-            if(keys&KEY_RIGHT) carYaw+=carVelocity*.10f;
+            /* Invert the car steering sign: the rendered vehicle turns toward the pressed screen direction. */
+            if(keys&KEY_LEFT) carYaw+=carVelocity*.10f;
+            if(keys&KEY_RIGHT) carYaw-=carVelocity*.10f;
             /* The visible front of the car is local -Z, so UP moves along -Z. */
             playerX+=sinf(carYaw)*carVelocity;
             playerZ-=cosf(carYaw)*carVelocity;
