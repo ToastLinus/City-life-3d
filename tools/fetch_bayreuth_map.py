@@ -22,8 +22,9 @@ ENDPOINTS = [
 ]
 QUERY = r"""
 [out:json][timeout:180];
-area["name"="Bayreuth"]["boundary"="administrative"]["admin_level"="8"]->.city;
-.city out tags;
+rel["name"="Bayreuth"]["boundary"="administrative"]["admin_level"="8"]->.cityrel;
+.cityrel map_to_area -> .city;
+.cityrel out tags;
 (
   way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](area.city);
   way["building"](area.city);
@@ -99,7 +100,7 @@ def build_features(payload):
     elements = payload.get("elements", [])
     city_areas = [
         e for e in elements
-        if e.get("type") == "area"
+        if e.get("type") == "relation"
         and e.get("tags", {}).get("name") == "Bayreuth"
         and e.get("tags", {}).get("boundary") == "administrative"
         and e.get("tags", {}).get("admin_level") == "8"
