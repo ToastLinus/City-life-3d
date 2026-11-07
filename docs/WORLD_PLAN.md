@@ -32,6 +32,16 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 - Spieler kann Gegenstände ansehen, kaufen und im Inventar ablegen.
 - Später können weitere Läden wie Kiosk, Fahrradladen, Café und Kleidungsgeschäft hinzukommen.
 
+
+### Geparkte Fahrzeuge und freie Fahrzeugnutzung
+- In den Straßen und auf Parkplätzen stehen verschiedene Fahrzeuge: Autos, Fahrräder, E-Scooter, Motorroller und Motorräder.
+- Fahrzeuge sind als eigene, stilisierte Low-Poly-Modelle erkennbar und passend zu den jeweiligen Regionen gestaltet.
+- Der Spieler kann sich Fahrzeuge ansehen, an ihnen eine Interaktion auslösen und – sofern sie im Spiel freigegeben sind – einsteigen und losfahren.
+- Jedes Fahrzeug bekommt ein einfaches, unterscheidbares Fahrgefühl: Autos stabiler, Scooter und Roller wendiger, Motorräder schneller und empfindlicher beim Lenken.
+- Für den Anfang gibt es wenige Fahrzeuge in einem kleinen Testgebiet; später kommen mehr Varianten und Parkplätze hinzu.
+- Fahrzeuge werden nicht alle gleichzeitig aktiv simuliert. Nicht benötigte Fahrzeuge bleiben einfache Dekoration, damit Speicher und Leistung des Nintendo 3DS geschont werden.
+- Fahrzeugnutzung ist reine Spielmechanik in einer fiktiven Spielwelt und keine Anleitung für das Fahren echter Fahrzeuge.
+
 ### NPCs und Stadtleben
 - Unterschiedliche Passanten mit variierenden Farben und Outfits.
 - NPCs bewegen sich auf Gehwegen, bleiben gelegentlich stehen und wechseln einfache Wegpunkte.
