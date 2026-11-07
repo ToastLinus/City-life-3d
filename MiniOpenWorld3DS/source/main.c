@@ -18,9 +18,9 @@ static void house(float x,float y,float w,float h,float r,float g,float b){
 static float playerX=200.0f, playerY=184.0f;
 static float scooterX=244.0f, scooterY=184.0f;
 static float carX=145.0f, carY=184.0f;
-static float npcX=78.0f;
+static float npcX=78.0f;\nstatic float npc2X=350.0f;
 /* riding: 0 = on foot, 1 = scooter, 2 = car */
-static int riding=0, npcDirection=1;
+static int riding=0, npcDirection=1, npc2Direction=-1;
 static void person(float x,float y,float shirtR,float shirtG,float shirtB){
  Q(x-4.0f,y-3.0f,8.0f,12.0f,.18f,shirtR,shirtG,shirtB);
  T(P(x-4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x+4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x,y-11.0f,.17f,shirtR,shirtG,shirtB));
@@ -53,7 +53,7 @@ static void city(void){
  house(28,92,60,55,.82f,.48f,.27f); house(105,92,62,69,.53f,.68f,.84f); house(244,92,62,58,.8f,.57f,.35f); house(324,92,54,75,.71f,.49f,.74f);
  house(32,220,60,55,.78f,.68f,.5f); house(108,220,56,46,.5f,.73f,.56f); house(260,220,58,55,.82f,.55f,.42f); house(333,220,48,46,.55f,.66f,.82f);
  for(int i=0;i<4;i++){float x=18+i*92;Q(x+8,91,5,22,.48f,.4f,.25f,.12f);T(P(x,92,.4f,.12f,.5f,.2f),P(x+23,92,.4f,.12f,.5f,.2f),P(x+12,66,.4f,.18f,.68f,.25f));}
- Q(185,168,30,14,.35f,.12f,.5f,.9f); Q(192,160,17,9,.34f,.48f,.8f,1);
+ Q(185,168,30,14,.35f,.12f,.5f,.9f); Q(192,160,17,9,.34f,.48f,.8f,1);\n /* Small fictional shop facade: warm wall, awning, windows and entrance. */\n Q(242,158,48,27,.42f,.91f,.76f,.48f); Q(239,154,54,7,.38f,.25f,.55f,.78f);\n Q(247,166,12,10,.36f,.48f,.78f,.88f); Q(273,166,12,10,.36f,.48f,.78f,.88f);\n Q(261,169,9,16,.35f,.38f,.22f,.14f); Q(251,151,28,4,.34f,.98f,.84f,.35f);
 }
 int main(void){
  gfxInitDefault(); consoleInit(GFX_BOTTOM,NULL); if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)){gfxExit();return 1;}
@@ -70,9 +70,9 @@ int main(void){
   if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
   if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
   if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
-  if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;}
+  if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;\n   npc2X+=0.16f*npc2Direction;if(npc2X>366.0f)npc2Direction=-1;if(npc2X<310.0f)npc2Direction=1;}
   if(riding==1){scooterX=playerX;scooterY=playerY;}else if(riding==2){carX=playerX;carY=playerY;}
-  city();person(npcX,178.0f,.88f,.48f,.22f);
+  city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
   scooter(scooterX,scooterY);car(carX,carY);
   if(!riding)player();
   memcpy(vbo,v,n*sizeof(Vtx));
