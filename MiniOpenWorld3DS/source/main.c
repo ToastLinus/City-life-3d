@@ -167,8 +167,8 @@ static void scooterBox(float x,float y,float z,float w,float h,float d,
     for(int i=start;i<vertexCount;i++)
         transformPoint(&vertices[i].x,&vertices[i].z);
 }
-static void scooter(float x,float z) {
-    objectCenterX=x; objectCenterZ=z; objectYaw=scooterYaw;
+static void scooterAt(float x,float z,float yaw) {
+    objectCenterX=x; objectCenterZ=z; objectYaw=yaw;
     /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
     float frontLift=scooterTrick?.34f:0.0f;
     wheel(x,.23f+frontLift,z-.62f,.23f,.13f);
@@ -180,6 +180,9 @@ static void scooter(float x,float z) {
     scooterBox(x,.99f+frontLift,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
     scooterBox(x,.94f+frontLift,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
     objectYaw=0.0f;
+}
+static void scooter(float x,float z) {
+    scooterAt(x,z,scooterYaw);
 }
 static void scooterRider(float x,float z,float yaw) {
     objectCenterX=x; objectCenterZ=z; objectYaw=yaw;
