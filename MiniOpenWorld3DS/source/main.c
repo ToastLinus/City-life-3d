@@ -344,8 +344,8 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float dx=x1-x0,dz=z1-z0,len=sqrtf(dx*dx+dz*dz);
             if(len<.05f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
+            if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             quad(V(x0+ox,.012f,z0+oz,.19f,.20f,.22f),V(x1+ox,.012f,z1+oz,.19f,.20f,.22f),V(x1-ox,.012f,z1-oz,.19f,.20f,.22f),V(x0-ox,.012f,z0-oz,.19f,.20f,.22f));
-            if(vertexCount>MAX_MAP_VERTICES-12) return 0;
         }
     } else if(kind==BT3D_KIND_BUILDING && count>=3) {
         float bx=(float)tx*256.0f,bz=(float)tz*256.0f;
@@ -354,7 +354,6 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
             float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
             tri(V(ax,4.0f,az,.66f,.48f,.34f),V(px,4.0f,pz,.72f,.55f,.40f),V(qx,4.0f,qz,.62f,.44f,.31f));
-            if(vertexCount>MAX_MAP_VERTICES-18) return 0;
         }
         for(uint16_t i=0;i<count;i++) {
             uint16_t j=(uint16_t)((i+1)%count);
@@ -528,10 +527,6 @@ int main(void) {
                 scooterYaw=-cameraYaw;
             }
         }
-        if(playerX < -12.0f) { playerX=-12.0f; carVelocity=0.0f; }
-        if(playerX > 12.0f) { playerX=12.0f; carVelocity=0.0f; }
-        if(playerZ < -12.0f) { playerZ=-12.0f; carVelocity=0.0f; }
-        if(playerZ > 12.0f) { playerZ=12.0f; carVelocity=0.0f; }
         /* Tree trunks block walking, scooter and car movement. */
         float collisionRadius=riding==2?0.95f:(riding==1?0.48f:0.34f);
         if(hitsTree(playerX,playerZ,collisionRadius)) {
