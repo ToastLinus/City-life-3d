@@ -70,7 +70,36 @@ static void person(float x,float z,float r,float g,float b) {
     box(x,.0f,z,.48f,1.0f,.38f,r,g,b);
     box(x,1.05f,z,.34f,.34f,.34f,.92f,.69f,.48f);
 }
+static int hitsTree(float x,float z,float radius) {
+    for(int i=0;i<4;i++) {
+        float treeX=-8.0f+(float)i*5.3f;
+        float dx=x-treeX, dz=z-5.5f;
+        float limit=radius+.32f;
+        if(dx*dx+dz*dz<limit*limit) return 1;
+    }
+    return 0;
+}
+static void scooterBox(float x,float y,float z,float w,float h,float d,
+                       float r,float g,float b) {
+    int start=vertexCount;
+    box(x,y,z,w,h,d,r,g,b);
+    for(int i=start;i<vertexCount;i++)
+        transformPoint(&vertices[i].x,&vertices[i].z);
+}
+static void scooter(float x,float z) {
+    objectCenterX=x; objectCenterZ=z; objectYaw=scooterYaw;
+    /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
+    wheel(x,.23f,z-.62f,.23f,.13f);
+    wheel(x,.23f,z+.62f,.23f,.13f);
+    scooterBox(x,.38f,z,.24f,.10f,.88f,.16f,.18f,.20f);
+    scooterBox(x,.43f,z-.48f,.12f,.10f,.18f,.25f,.28f,.30f);
+    scooterBox(x,.70f,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
+    scooterBox(x,.99f,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
+    scooterBox(x,.94f,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
+    objectYaw=0.0f;
+}
 static float carYaw=0.0f, carVelocity=0.0f;
+static float scooterYaw=0.0f;
 static float objectYaw=0.0f, objectCenterX=0.0f, objectCenterZ=0.0f;
 static void transformPoint(float *x,float *z) {
     float dx=*x-objectCenterX, dz=*z-objectCenterZ;
@@ -116,12 +145,7 @@ static void vehicle(float x,float z,float r,float g,float b) {
         wheel(x+.91f,.25f,z+.82f,.34f,.20f);
         objectYaw=0.0f;
     } else {
-        box(x,.12f,z,1.0f,.25f,.35f,r,g,b);
-        box(x,.37f,z,.28f,.32f,.30f,r*.75f,g*.75f,b*.75f);
-        box(x-.34f,.0f,z-.12f,.18f,.18f,.10f,.07f,.07f,.08f);
-        box(x+.34f,.0f,z-.12f,.18f,.18f,.10f,.07f,.07f,.08f);
-        box(x-.34f,.0f,z+.12f,.18f,.18f,.10f,.07f,.07f,.08f);
-        box(x+.34f,.0f,z+.12f,.18f,.18f,.10f,.07f,.07f,.08f);
+        scooter(x,z);
     }
 }
 static void buildCity(void) {
@@ -218,6 +242,7 @@ int main(void) {
             touchWasDown=0;
         }
         float speed=riding==2?.13f:(riding==1?.105f:.075f);
+        float previousX=playerX, previousZ=playerZ;
         if(riding==2) {
             if(keys&KEY_UP) carVelocity+=.006f;
             if(keys&KEY_DOWN) carVelocity-=.008f;
@@ -242,14 +267,26 @@ int main(void) {
             /* Keep diagonal movement at the same speed as straight movement. */
             float moveLength=sqrtf(moveX*moveX+moveZ*moveZ);
             if(moveLength>0.001f) {
+                if(riding==1)
+                    scooterYaw=atan2f(moveX/moveLength,-moveZ/moveLength);
                 playerX+=(moveX/moveLength)*speed;
                 playerZ+=(moveZ/moveLength)*speed;
+            } else if(riding==1) {
+                /* When stationary, point the scooter where the camera is looking. */
+                scooterYaw=-cameraYaw;
             }
         }
         if(playerX < -12.0f) { playerX=-12.0f; carVelocity=0.0f; }
         if(playerX > 12.0f) { playerX=12.0f; carVelocity=0.0f; }
         if(playerZ < -12.0f) { playerZ=-12.0f; carVelocity=0.0f; }
         if(playerZ > 12.0f) { playerZ=12.0f; carVelocity=0.0f; }
+        /* Tree trunks block walking, scooter and car movement. */
+        float collisionRadius=riding==2?0.95f:(riding==1?0.48f:0.34f);
+        if(hitsTree(playerX,playerZ,collisionRadius)) {
+            playerX=previousX;
+            playerZ=previousZ;
+            if(riding==2) carVelocity=0.0f;
+        }
         if(riding==1) { scooterX=playerX; scooterZ=playerZ; }
         if(riding==2) { carX=playerX; carZ=playerZ; }
 
