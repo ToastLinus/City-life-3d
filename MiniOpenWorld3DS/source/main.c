@@ -15,6 +15,7 @@ typedef struct { float x,y,z; } Pos;
 typedef struct { float r,g,b,a; } Clr;
 
 static Vtx vertices[MAX_VERTICES];
+static int vertexCount=0;
 static Vtx bayreuthVertices[MAX_MAP_VERTICES];
 static int bayreuthVertexCount=0;
 static int bayreuthTileX=999999, bayreuthTileZ=999999;
