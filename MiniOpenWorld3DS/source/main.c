@@ -154,8 +154,11 @@ static void wheel(float x,float y,float z,float radius,float width) {
         transformPoint(&cx,&cz); transformPoint(&dx,&dz);
         quad(V(ax,y1,az,.055f,.06f,.07f),V(bx,y2,bz,.055f,.06f,.07f),V(cx,y2,cz,.055f,.06f,.07f),V(dx,y1,dz,.055f,.06f,.07f));
     }
-    // Simple metallic wheel hubs.
+    /* Metallic hubs share the wheel transform, so they turn with the vehicle. */
+    int hubStart=vertexCount;
     box(x,y,z,width*1.08f,radius*.72f,radius*.72f,.48f,.50f,.54f);
+    for(int i=hubStart;i<vertexCount;i++)
+        transformPoint(&vertices[i].x,&vertices[i].z);
 }
 static void scooterBox(float x,float y,float z,float w,float h,float d,
                        float r,float g,float b) {
