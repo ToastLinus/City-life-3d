@@ -78,9 +78,10 @@ static void house(float x,float z,float w,float h,float d,float r,float g,float 
     box(x+w*.22f,.0f,z-d*.505f,w*.22f,h*.38f,.035f,.24f,.52f,.68f);
     box(x,.0f,z-d*.53f,w*.16f,h*.55f,.04f,.32f,.19f,.12f);
 }
-static void person(float x,float z,float r,float g,float b,float phase,float lift) {
+static void person(float x,float z,float r,float g,float b,float phase,float lift,float yaw) {
     /* Head, torso, arms and animated legs; face points toward local -Z. */
     float swing=sinf(phase)*.13f;
+    int start=vertexCount;
     box(x,.38f+lift,z,.40f,.62f,.30f,r,g,b);
     box(x,1.06f+lift,z,.31f,.31f,.31f,.92f,.70f,.53f);
     box(x-.27f,.38f+lift,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
@@ -89,6 +90,12 @@ static void person(float x,float z,float r,float g,float b,float phase,float lif
     box(x+.115f-swing,.0f+lift,z,.17f,.43f,.19f,.16f,.18f,.21f);
     box(x-.075f,.0f+lift,z-.163f,.055f,.055f,.025f,.08f,.08f,.08f);
     box(x+.075f,.0f+lift,z-.163f,.055f,.055f,.025f,.08f,.08f,.08f);
+    float cs=cosf(yaw), sn=sinf(yaw);
+    for(int i=start;i<vertexCount;i++) {
+        float dx=vertices[i].x-x, dz=vertices[i].z-z;
+        vertices[i].x=x+dx*cs+dz*sn;
+        vertices[i].z=z-dx*sn+dz*cs;
+    }
 }
 static int hitsTree(float x,float z,float radius) {
     for(int i=0;i<4;i++) {
@@ -143,6 +150,17 @@ static void scooter(float x,float z) {
     scooterBox(x,.70f+frontLift,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
     scooterBox(x,.99f+frontLift,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
     scooterBox(x,.94f+frontLift,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
+    objectYaw=0.0f;
+}
+static void scooterRider(float x,float z,float yaw) {
+    objectCenterX=x; objectCenterZ=z; objectYaw=yaw;
+    int start=vertexCount;
+    box(x,.78f,z,.34f,.58f,.25f,.18f,.30f,.82f);
+    box(x,1.43f,z,.29f,.29f,.29f,.92f,.70f,.53f);
+    box(x-.22f,.78f,z,.12f,.48f,.13f,.12f,.15f,.20f);
+    box(x+.22f,.78f,z,.12f,.48f,.13f,.12f,.15f,.20f);
+    for(int i=start;i<vertexCount;i++)
+        transformPoint(&vertices[i].x,&vertices[i].z);
     objectYaw=0.0f;
 }
 static void carBox(float x,float y,float z,float w,float h,float d,float r,float g,float b) {
@@ -380,12 +398,12 @@ int main(void) {
         }
 
         buildCity();
-        person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0);
-        person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0);
-        person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0);
-        person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0);
-        person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0);
-        person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0);
+        person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f);
+        person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f);
+        person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f);
+        person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0,-1.5708f);
+        person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0,-1.5708f);
+        person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
@@ -408,7 +426,7 @@ int main(void) {
         scooterRider(trafficScooterX,trafficScooterZ,trafficScooterYaw);
         scooterYaw=savedScooterYaw;
         scooterTrick=savedTrick;
-        if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump);
+        if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw);
         uploadVertices();
 
         C3D_FVec eye, look;
