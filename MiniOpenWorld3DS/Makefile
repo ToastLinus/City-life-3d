@@ -42,7 +42,7 @@ APP_TITLE := CITY LIFE 3D
 APP_DESCRIPTION := Colorful 3D city exploration
 APP_AUTHOR := ToastLinus
 ICON := icon.png
-#ROMFS		:=	romfs
+ROMFS		:=	romfs
 #GFXBUILD	:=	$(ROMFS)/gfx
 
 #---------------------------------------------------------------------------------
