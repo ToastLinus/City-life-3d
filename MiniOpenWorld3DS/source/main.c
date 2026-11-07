@@ -25,14 +25,19 @@ static C3D_RenderTarget *target;
 
 static float playerX=0.0f, playerZ=0.0f;
 #define NPC_COUNT 6
-static float npcX[NPC_COUNT]={-3.0f,3.0f,-7.0f,7.0f,-1.0f,5.0f};
-static float npcZ[NPC_COUNT]={-1.0f,-3.0f,3.0f,5.0f,8.0f,-8.0f};
-static float npcDirection[NPC_COUNT]={0.4f,2.2f,1.1f,3.5f,4.4f,5.2f};
-static float npcSpeed[NPC_COUNT]={.012f,.010f,.014f,.011f,.013f,.009f};
+/* Pedestrians walk along the two clear sidewalk strips. */
+static float npcX[NPC_COUNT]={-3.35f,-3.35f,-3.35f,3.35f,3.35f,3.35f};
+static float npcZ[NPC_COUNT]={-8.0f,-2.5f,5.0f,8.0f,2.5f,-5.0f};
+static float npcDirection[NPC_COUNT]={1.0f,1.0f,1.0f,-1.0f,-1.0f,-1.0f};
+static float npcSpeed[NPC_COUNT]={.035f,.031f,.038f,.033f,.036f,.030f};
+static float npcWalkPhase[NPC_COUNT]={0,1,2,3,4,5};
+static float playerYaw=0.0f, playerJump=0.0f, playerJumpVelocity=0.0f;
 static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
 static float trafficCarX=-1.55f, trafficCarZ=-10.0f, trafficCarYaw=3.1415926f;
 static float trafficCar2X=1.55f, trafficCar2Z=11.0f, trafficCar2Yaw=0.0f;
+static float trafficScooterX=-3.35f, trafficScooterZ=12.0f;
+static float trafficScooterYaw=3.1415926f;
 static int vehicleStyle=0;
 static int riding=0;
 static int firstPerson=0;
@@ -73,14 +78,17 @@ static void house(float x,float z,float w,float h,float d,float r,float g,float 
     box(x+w*.22f,.0f,z-d*.505f,w*.22f,h*.38f,.035f,.24f,.52f,.68f);
     box(x,.0f,z-d*.53f,w*.16f,h*.55f,.04f,.32f,.19f,.12f);
 }
-static void person(float x,float z,float r,float g,float b) {
-    /* A readable low-poly pedestrian: torso, head, arms and separate legs. */
-    box(x,.38f,z,.40f,.62f,.30f,r,g,b);
-    box(x,1.06f,z,.31f,.31f,.31f,.92f,.70f,.53f);
-    box(x-.27f,.38f,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
-    box(x+.27f,.38f,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
-    box(x-.115f,.0f,z,.17f,.43f,.19f,.16f,.18f,.21f);
-    box(x+.115f,.0f,z,.17f,.43f,.19f,.16f,.18f,.21f);
+static void person(float x,float z,float r,float g,float b,float phase,float lift) {
+    /* Head, torso, arms and animated legs; face points toward local -Z. */
+    float swing=sinf(phase)*.13f;
+    box(x,.38f+lift,z,.40f,.62f,.30f,r,g,b);
+    box(x,1.06f+lift,z,.31f,.31f,.31f,.92f,.70f,.53f);
+    box(x-.27f,.38f+lift,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
+    box(x+.27f,.38f+lift,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
+    box(x-.115f+swing,.0f+lift,z,.17f,.43f,.19f,.16f,.18f,.21f);
+    box(x+.115f-swing,.0f+lift,z,.17f,.43f,.19f,.16f,.18f,.21f);
+    box(x-.075f,.0f+lift,z-.163f,.055f,.055f,.025f,.08f,.08f,.08f);
+    box(x+.075f,.0f+lift,z-.163f,.055f,.055f,.025f,.08f,.08f,.08f);
 }
 static int hitsTree(float x,float z,float radius) {
     for(int i=0;i<4;i++) {
@@ -262,7 +270,8 @@ int main(void) {
     printf("\x1b[3;1H+--------------------------------+");
     printf("\x1b[5;1H3D TEST WORLD");
     printf("\x1b[7;1HD-PAD: Move / steer");
-    printf("\x1b[8;1HA: Enter / leave vehicle");
+    printf("\x1b[8;1HB: Jump on foot");
+    printf("\x1b[9;1HA: Enter / leave vehicle");
     printf("\x1b[9;1HCar: UP gas / DOWN brake");
     printf("\x1b[10;1HSTART: Exit");
 
@@ -271,6 +280,8 @@ int main(void) {
         u32 keys=hidKeysHeld(), down=hidKeysDown();
         if(down&KEY_START) break;
         if(down&KEY_X) firstPerson=!firstPerson;
+        if(down&KEY_B && riding==0 && playerJump<=0.001f) playerJumpVelocity=.16f;
+        if(riding!=0) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         scooterTrick=(riding==1 && (keys&KEY_Y))?1:0;
         if(down&KEY_A) {
             if(riding) riding=0;
@@ -324,8 +335,8 @@ int main(void) {
             /* Keep diagonal movement at the same speed as straight movement. */
             float moveLength=sqrtf(moveX*moveX+moveZ*moveZ);
             if(moveLength>0.001f) {
-                if(riding==1)
-                    scooterYaw=atan2f(moveX/moveLength,-moveZ/moveLength);
+                playerYaw=atan2f(moveX/moveLength,-moveZ/moveLength);
+                if(riding==1) scooterYaw=playerYaw;
                 playerX+=(moveX/moveLength)*speed;
                 playerZ+=(moveZ/moveLength)*speed;
             } else if(riding==1) {
@@ -347,31 +358,34 @@ int main(void) {
         if(riding==1) { scooterX=playerX; scooterZ=playerZ; }
         if(riding==2) { carX=playerX; carZ=playerZ; }
 
-        // Ambient traffic travels along the long main road and loops at the edges.
-        trafficCarZ+=0.035f;
+        // Ambient road traffic plus a separate scooter with its own rider.
+        trafficCarZ+=0.055f;
         if(trafficCarZ>13.0f) trafficCarZ=-13.0f;
-        trafficCar2Z-=0.028f;
+        trafficCar2Z-=0.045f;
         if(trafficCar2Z < -13.0f) trafficCar2Z=13.0f;
+        trafficScooterZ-=0.060f;
+        if(trafficScooterZ < -13.0f) trafficScooterZ=13.0f;
 
-        /* Pedestrians wander around the block and turn at the walkable bounds. */
+        /* Sidewalk pedestrians move at a visible pace and animate their steps. */
         for(int i=0;i<NPC_COUNT;i++) {
-            npcX[i]+=cosf(npcDirection[i])*npcSpeed[i];
-            npcZ[i]+=sinf(npcDirection[i])*npcSpeed[i];
-            if(npcX[i] < -10.0f || npcX[i] > 10.0f ||
-               npcZ[i] < -10.0f || npcZ[i] > 10.0f) {
-                npcDirection[i]+=2.35f;
-                npcX[i]-=cosf(npcDirection[i])*npcSpeed[i]*2.0f;
-                npcZ[i]-=sinf(npcDirection[i])*npcSpeed[i]*2.0f;
-            }
+            npcZ[i]+=npcDirection[i]*npcSpeed[i];
+            npcWalkPhase[i]+=.20f;
+            if(npcZ[i] < -11.0f) { npcZ[i]=-11.0f; npcDirection[i]=1.0f; }
+            if(npcZ[i] > 11.0f) { npcZ[i]=11.0f; npcDirection[i]=-1.0f; }
+        }
+        if(riding==0 && playerJumpVelocity!=0.0f) {
+            playerJump+=playerJumpVelocity;
+            playerJumpVelocity-=.012f;
+            if(playerJump<=0.0f) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         }
 
         buildCity();
-        person(npcX[0],npcZ[0],.88f,.46f,.20f);
-        person(npcX[1],npcZ[1],.66f,.30f,.76f);
-        person(npcX[2],npcZ[2],.18f,.58f,.82f);
-        person(npcX[3],npcZ[3],.84f,.66f,.22f);
-        person(npcX[4],npcZ[4],.32f,.72f,.42f);
-        person(npcX[5],npcZ[5],.72f,.32f,.28f);
+        person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0);
+        person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0);
+        person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0);
+        person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0);
+        person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0);
+        person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
@@ -385,7 +399,16 @@ int main(void) {
         vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f);
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         vehicleStyle=savedStyle;
-        if(!riding) person(playerX,playerZ,.12f,.40f,.92f);
+        /* Traffic scooter is independent from the player's scooter and trick input. */
+        int savedTrick=scooterTrick;
+        float savedScooterYaw=scooterYaw;
+        scooterTrick=0;
+        scooterYaw=trafficScooterYaw;
+        scooter(trafficScooterX,trafficScooterZ);
+        scooterRider(trafficScooterX,trafficScooterZ,trafficScooterYaw);
+        scooterYaw=savedScooterYaw;
+        scooterTrick=savedTrick;
+        if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump);
         uploadVertices();
 
         C3D_FVec eye, look;
