@@ -102,7 +102,7 @@ int main(void){
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
  C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();turnScene();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
- printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HA: Ride / park scooter");printf("\x1b[10;1HSTART: Exit");
+ printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1HSTYLUS  Drag to look around");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
  while(aptMainLoop()){
   hidScanInput();cameraTouch();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
   if(down&KEY_A){if(riding==1){riding=0;scooterX=playerX;scooterY=playerY;}else if(riding==2){riding=0;carX=playerX;carY=playerY;}else{float ds=(playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY);float dc=(playerX-carX)*(playerX-carX)+(playerY-carY)*(playerY-carY);if(ds<dc&&ds<625.0f)riding=1;else if(dc<625.0f)riding=2;}}
@@ -119,7 +119,7 @@ int main(void){
   if(!riding)player();
   turnScene();
   memcpy(vbo,v,n*sizeof(Vtx));
-  printf("\x1b[12;1H%s",riding?"Scooter: ON  A: Park":"Scooter: OFF  Find blue scooter");
+  printf("\x1b[14;1HVEHICLE: %-18s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
  }
  linearFree(vbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();if(audioReady){ndspExit();linearFree(audioData);}gfxExit();return 0;
