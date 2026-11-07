@@ -14,6 +14,13 @@ static void house(float x,float y,float w,float h,float r,float g,float b){
  Vtx e=P(x+w*.5f,y,.55f,r*.65f,g*.65f,b*.65f),f=P(x+w*.82f,y+h*.28f,.55f,r*.58f,g*.58f,b*.58f),g1=P(x+w*.5f,y+h*.56f,.55f,r*.52f,g*.52f,b*.52f),hh=P(x+w*.18f,y+h*.28f,.55f,r*.62f,g*.62f,b*.62f);
  T(a,bb,c);T(a,c,d);T(d,c,g1);T(d,g1,hh);T(bb,f,g1);T(bb,g1,c);T(e,f,g1);T(e,g1,hh);
 }
+static float playerX=200.0f, playerY=184.0f;
+static void player(void){
+ /* Simple, colorful placeholder character drawn above the street. */
+ Q(playerX-5.0f,playerY-3.0f,10.0f,13.0f,.18f,.12f,.42f,.92f);
+ T(P(playerX-5.0f,playerY-3.0f,.17f,.12f,.42f,.92f),P(playerX+5.0f,playerY-3.0f,.17f,.12f,.42f,.92f),P(playerX,playerY-12.0f,.17f,1.0f,.78f,.48f));
+ Q(playerX-3.0f,playerY-18.0f,6.0f,6.0f,.16f,.96f,.72f,.48f);
+}
 static void city(void){
  n=0; Q(0,0,400,240,.9f,.27f,.65f,.32f); Q(0,104,400,50,.8f,.23f,.25f,.29f); Q(172,0,52,240,.79f,.23f,.25f,.29f);
  for(int x=8;x<400;x+=48)Q(x,127,22,3,.7f,.95f,.84f,.48f);
