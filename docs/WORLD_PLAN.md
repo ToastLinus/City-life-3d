@@ -23,6 +23,34 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 - Orte sollen sich optisch und atmosphärisch deutlich unterscheiden.
 - Spieler soll zwischen den Orten im Hauptmenü wählen können.
 
+
+## Lebendige Spielwelt und Interaktionen
+
+### Läden und Einkaufen
+- In Bayreuth soll es einen begehbaren Discounter geben, der sich wie ein typischer Supermarkt anfühlt. Für das Spiel verwenden wir zunächst einen eigenen Fantasienamen und eigene Gestaltung statt geschützter Markenlogos.
+- Regale, Kassen, Einkaufskörbe und Waren als einfache, erkennbare 3D-Objekte.
+- Spieler kann Gegenstände ansehen, kaufen und im Inventar ablegen.
+- Später können weitere Läden wie Kiosk, Fahrradladen, Café und Kleidungsgeschäft hinzukommen.
+
+### NPCs und Stadtleben
+- Unterschiedliche Passanten mit variierenden Farben und Outfits.
+- NPCs bewegen sich auf Gehwegen, bleiben gelegentlich stehen und wechseln einfache Wegpunkte.
+- Kunden betreten Läden; Verkäufer stehen an der Kasse.
+- Einfache optionale Dialoge und kleine Aufgaben, z. B. etwas ausliefern oder einen Treffpunkt finden.
+- NPC-Verhalten wird bewusst leichtgewichtig gehalten, damit der 3DS nicht überlastet wird.
+
+### Aktionen und Spielregeln
+- Türen öffnen, mit Figuren sprechen, Gegenstände aufnehmen, einkaufen und Fahrzeuge nutzen.
+- Neben normalen Aktivitäten kann es harmlose, cartoonhafte Quatsch-Missionen geben. Diese bleiben klar fiktiv und spielerisch; keine realistischen Anleitungen zu Einbruch, Werkzeuggebrauch oder dem Umgehen echter Sicherheitssysteme.
+- Falls eine Mission unerlaubtes Mitnehmen eines erfundenen Spielgegenstands enthält, wird das abstrakt und nicht realistisch dargestellt, mit klaren Spielkonsequenzen und ohne echte Methoden zu erklären.
+
+### Umsetzungsreihenfolge
+1. Einen kleinen begehbaren Straßenabschnitt mit Spielfigur und Kamera bauen.
+2. Ein Gebäude mit Tür und einem einfachen Innenraum ergänzen.
+3. Ein Geschäft mit Regalen, Waren, Kaufen-Interaktion und Inventar erstellen.
+4. Wenige NPCs mit einfachen Laufwegen hinzufügen und Leistung auf dem 3DS testen.
+5. Erst danach weitere Läden, Missionen und Stadtviertel ausbauen.
+
 ## Technische Umsetzung
 
 - Kein direktes, dauerhaftes Google-Maps-Streaming auf dem 3DS.
