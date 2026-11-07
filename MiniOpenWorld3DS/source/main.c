@@ -38,6 +38,8 @@ static float terrainHeightRaw(float x,float z) {
  }
  return terrainBaseHeight;
 }
+static Vtx V(float x,float y,float z,float r,float g,float b);
+static void quad(Vtx a,Vtx b,Vtx c,Vtx d);
 static float terrainHeight(float x,float z){return terrainHeightRaw(x,z)-terrainBaseHeight;}
 static void loadTerrainTiles(void) {
  FILE *f=fopen("romfs:/bayreuth-dem.bin","rb"); unsigned char h[16]; terrainTileCount=0;
