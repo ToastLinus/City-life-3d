@@ -174,7 +174,7 @@ int main(void) {
         C3D_FVec eye=FVec3_New(playerX,5.0f,playerZ+8.5f);
         C3D_FVec look=FVec3_New(playerX,0.7f,playerZ-1.0f);
         C3D_FVec up=FVec3_New(0.0f,1.0f,0.0f);
-        Mtx_LookAt(&view,&eye,&look,&up,true);
+        Mtx_LookAt(&view,eye,look,up,true);
         Mtx_Multiply(&viewProjection,&projection,&view);
 
         printf("\x1b[12;1HVEHICLE: %-12s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
