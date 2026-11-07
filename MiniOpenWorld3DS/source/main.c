@@ -353,14 +353,15 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
             float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
+            if(vertexCount+3>MAX_MAP_VERTICES) return -1;
             tri(V(ax,4.0f,az,.66f,.48f,.34f),V(px,4.0f,pz,.72f,.55f,.40f),V(qx,4.0f,qz,.62f,.44f,.31f));
         }
         for(uint16_t i=0;i<count;i++) {
             uint16_t j=(uint16_t)((i+1)%count);
             float ax=bx+(float)points[i].x_quarter_m*.25f,az=bz+(float)points[i].z_quarter_m*.25f;
             float px=bx+(float)points[j].x_quarter_m*.25f,pz=bz+(float)points[j].z_quarter_m*.25f;
+            if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             quad(V(ax,.02f,az,.48f,.39f,.31f),V(px,.02f,pz,.48f,.39f,.31f),V(px,4.0f,pz,.66f,.52f,.39f),V(ax,4.0f,az,.66f,.52f,.39f));
-            if(vertexCount>MAX_MAP_VERTICES-18) return 0;
         }
     }
     return 0;
