@@ -35,7 +35,15 @@ int main(void){
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
  C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
- printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HSTART: Exit");
- while(aptMainLoop()){hidScanInput();if(hidKeysDown()&KEY_START)break;C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);}
+ printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HSTART: Exit");
+ while(aptMainLoop()){
+  hidScanInput();u32 keys=hidKeysHeld();if(hidKeysDown()&KEY_START)break;
+  if(keys&KEY_LEFT)playerX-=1.6f;if(keys&KEY_RIGHT)playerX+=1.6f;
+  if(keys&KEY_UP)playerY-=1.6f;if(keys&KEY_DOWN)playerY+=1.6f;
+  if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
+  if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
+  city();player();memcpy(vbo,v,n*sizeof(Vtx));
+  C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
+ }
  linearFree(vbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();gfxExit();return 0;
 }
