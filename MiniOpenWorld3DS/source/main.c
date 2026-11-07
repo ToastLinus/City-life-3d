@@ -24,11 +24,16 @@ static C3D_Mtx projection, view, viewProjection;
 static C3D_RenderTarget *target;
 
 static float playerX=0.0f, playerZ=0.0f;
-static float npcX=-3.0f, npcZ=-1.0f;
-static float npc2X=3.0f, npc2Z=-3.0f;
+#define NPC_COUNT 6
+static float npcX[NPC_COUNT]={-3.0f,3.0f,-7.0f,7.0f,-1.0f,5.0f};
+static float npcZ[NPC_COUNT]={-1.0f,-3.0f,3.0f,5.0f,8.0f,-8.0f};
+static float npcDirection[NPC_COUNT]={0.4f,2.2f,1.1f,3.5f,4.4f,5.2f};
+static float npcSpeed[NPC_COUNT]={.012f,.010f,.014f,.011f,.013f,.009f};
 static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
 static float trafficCarX=-1.55f, trafficCarZ=-10.0f, trafficCarYaw=3.1415926f;
+static float trafficCar2X=1.55f, trafficCar2Z=11.0f, trafficCar2Yaw=0.0f;
+static int vehicleStyle=0;
 static int riding=0;
 static int firstPerson=0;
 static int scooterTrick=0;
@@ -69,8 +74,13 @@ static void house(float x,float z,float w,float h,float d,float r,float g,float 
     box(x,.0f,z-d*.53f,w*.16f,h*.55f,.04f,.32f,.19f,.12f);
 }
 static void person(float x,float z,float r,float g,float b) {
-    box(x,.0f,z,.48f,1.0f,.38f,r,g,b);
-    box(x,1.05f,z,.34f,.34f,.34f,.92f,.69f,.48f);
+    /* A readable low-poly pedestrian: torso, head, arms and separate legs. */
+    box(x,.38f,z,.40f,.62f,.30f,r,g,b);
+    box(x,1.06f,z,.31f,.31f,.31f,.92f,.70f,.53f);
+    box(x-.27f,.38f,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
+    box(x+.27f,.38f,z,.14f,.56f,.16f,r*.82f,g*.82f,b*.82f);
+    box(x-.115f,.0f,z,.17f,.43f,.19f,.16f,.18f,.21f);
+    box(x+.115f,.0f,z,.17f,.43f,.19f,.16f,.18f,.21f);
 }
 static int hitsTree(float x,float z,float radius) {
     for(int i=0;i<4;i++) {
@@ -137,6 +147,33 @@ static void carBox(float x,float y,float z,float w,float h,float d,float r,float
 }
 static void vehicle(float x,float z,float r,float g,float b) {
     if(r>.5f) {
+        if(vehicleStyle==1) {
+            /* Utility van: taller roof and a longer, boxier rear cabin. */
+            carBox(x,.10f,z,1.90f,.58f,3.05f,r,g,b);
+            carBox(x,.67f,z+.12f,1.78f,.78f,1.95f,r*.82f,g*.82f,b*.82f);
+            carBox(x,.79f,z-.83f,1.52f,.34f,.055f,.28f,.61f,.76f);
+            carBox(x,.27f,z-1.55f,.38f,.18f,.10f,1.0f,.96f,.72f);
+            carBox(x,.28f,z+1.55f,.38f,.18f,.10f,1.0f,.04f,.025f);
+            objectCenterX=x; objectCenterZ=z; objectYaw=carYaw;
+            wheel(x-.97f,.25f,z-1.02f,.34f,.20f);
+            wheel(x+.97f,.25f,z-1.02f,.34f,.20f);
+            wheel(x-.97f,.25f,z+1.02f,.34f,.20f);
+            wheel(x+.97f,.25f,z+1.02f,.34f,.20f);
+            objectYaw=0.0f;
+        } else if(vehicleStyle==2) {
+            /* Compact hatchback: shorter body and lower cabin. */
+            carBox(x,.10f,z,1.62f,.43f,2.20f,r,g,b);
+            carBox(x,.52f,z-.10f,1.38f,.55f,1.24f,r*.78f,g*.78f,b*.78f);
+            carBox(x,.60f,z-.65f,1.20f,.29f,.05f,.28f,.62f,.78f);
+            carBox(x,.25f,z-1.12f,.34f,.15f,.08f,1.0f,.96f,.72f);
+            carBox(x,.25f,z+1.12f,.34f,.15f,.08f,1.0f,.04f,.025f);
+            objectCenterX=x; objectCenterZ=z; objectYaw=carYaw;
+            wheel(x-.83f,.23f,z-.70f,.29f,.18f);
+            wheel(x+.83f,.23f,z-.70f,.29f,.18f);
+            wheel(x-.83f,.23f,z+.70f,.29f,.18f);
+            wheel(x+.83f,.23f,z+.70f,.29f,.18f);
+            objectYaw=0.0f;
+        } else {
         carBox(x,.10f,z,1.78f,.48f,2.65f,r,g,b);
         carBox(x,.57f,z-.12f,1.48f,.68f,1.48f,r*.78f,g*.78f,b*.78f);
         carBox(x,.63f,z-.12f,1.50f,.38f,1.49f,.18f,.43f,.58f);
@@ -159,6 +196,7 @@ static void vehicle(float x,float z,float r,float g,float b) {
         wheel(x-.91f,.25f,z+.82f,.34f,.20f);
         wheel(x+.91f,.25f,z+.82f,.34f,.20f);
         objectYaw=0.0f;
+        }
     } else {
         scooter(x,z);
     }
@@ -312,17 +350,41 @@ int main(void) {
         // Ambient traffic travels along the long main road and loops at the edges.
         trafficCarZ+=0.035f;
         if(trafficCarZ>13.0f) trafficCarZ=-13.0f;
+        trafficCar2Z-=0.028f;
+        if(trafficCar2Z < -13.0f) trafficCar2Z=13.0f;
+
+        /* Pedestrians wander around the block and turn at the walkable bounds. */
+        for(int i=0;i<NPC_COUNT;i++) {
+            npcX[i]+=cosf(npcDirection[i])*npcSpeed[i];
+            npcZ[i]+=sinf(npcDirection[i])*npcSpeed[i];
+            if(npcX[i] < -10.0f || npcX[i] > 10.0f ||
+               npcZ[i] < -10.0f || npcZ[i] > 10.0f) {
+                npcDirection[i]+=2.35f;
+                npcX[i]-=cosf(npcDirection[i])*npcSpeed[i]*2.0f;
+                npcZ[i]-=sinf(npcDirection[i])*npcSpeed[i]*2.0f;
+            }
+        }
 
         buildCity();
-        person(npcX,npcZ,.88f,.46f,.20f);
-        person(npc2X,npc2Z,.66f,.30f,.76f);
+        person(npcX[0],npcZ[0],.88f,.46f,.20f);
+        person(npcX[1],npcZ[1],.66f,.30f,.76f);
+        person(npcX[2],npcZ[2],.18f,.58f,.82f);
+        person(npcX[3],npcZ[3],.84f,.66f,.22f);
+        person(npcX[4],npcZ[4],.32f,.72f,.42f);
+        person(npcX[5],npcZ[5],.72f,.32f,.28f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         vehicle(carX,carZ,.86f,.25f,.18f);
-        // Draw an independent traffic car without changing the player's car state.
+        // Draw two independent traffic vehicles in opposite lanes.
         float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
+        int savedStyle=vehicleStyle;
         carX=trafficCarX; carZ=trafficCarZ; carYaw=trafficCarYaw;
+        vehicleStyle=1;
         vehicle(trafficCarX,trafficCarZ,.72f,.62f,.18f);
+        carX=trafficCar2X; carZ=trafficCar2Z; carYaw=trafficCar2Yaw;
+        vehicleStyle=2;
+        vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f);
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
+        vehicleStyle=savedStyle;
         if(!riding) person(playerX,playerZ,.12f,.40f,.92f);
         uploadVertices();
 
