@@ -45,6 +45,28 @@ static int scooterTrick=0;
 static float cameraYaw=0.0f, cameraPitch=0.0f;
 static int touchWasDown=0;
 static touchPosition previousTouch;
+static s16 soundSamples[4096] __attribute__((aligned(0x80)));
+static ndspWaveBuf soundWave;
+static int audioReady=0;
+
+static void playTone(float frequency,float duration,float volume) {
+    if(!audioReady) return;
+    if(soundWave.status==NDSP_WBUF_QUEUED) return;
+    int count=(int)(22050.0f*duration);
+    if(count<1) count=1;
+    if(count>4096) count=4096;
+    for(int i=0;i<count;i++) {
+        float envelope=1.0f-(float)i/(float)count;
+        float sample=sinf(6.2831853f*frequency*(float)i/22050.0f);
+        soundSamples[i]=(s16)(sample*envelope*volume*12000.0f);
+    }
+    DSP_FlushDataCache(soundSamples,count*sizeof(s16));
+    memset(&soundWave,0,sizeof(soundWave));
+    soundWave.data_vaddr=soundSamples;
+    soundWave.nsamples=count;
+    soundWave.looping=false;
+    ndspChnWaveBufAdd(0,&soundWave);
+}
 
 static Vtx V(float x,float y,float z,float r,float g,float b) {
     return (Vtx){x,y,z,r,g,b,1.0f};
@@ -306,6 +328,13 @@ static void uploadVertices(void) {
 
 int main(void) {
     gfxInitDefault();
+    if(ndspInit()==0) {
+        audioReady=1;
+        ndspChnReset(0);
+        ndspChnSetInterp(0,NDSP_INTERP_LINEAR);
+        ndspChnSetRate(0,22050.0f);
+        ndspChnSetFormat(0,NDSP_FORMAT_MONO_PCM16);
+    }
     consoleInit(GFX_BOTTOM,NULL);
     if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)) { gfxExit(); return 1; }
     target=C3D_RenderTargetCreate(240,400,GPU_RB_RGBA8,GPU_RB_DEPTH24_STENCIL8);
@@ -347,16 +376,27 @@ int main(void) {
         u32 keys=hidKeysHeld(), down=hidKeysDown();
         if(down&KEY_START) break;
         if(down&KEY_X) firstPerson=!firstPerson;
-        if(down&KEY_B && riding==0 && playerJump<=0.001f) playerJumpVelocity=.24f;
+        if(down&KEY_B && riding==0 && playerJump<=0.001f) {
+            playerJumpVelocity=.24f;
+            playTone(880.0f,.10f,.55f);
+        }
+        if(down&KEY_Y && riding==1) playTone(520.0f,.08f,.45f);
         if(riding!=0) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         scooterTrick=(riding==1 && (keys&KEY_Y))?1:0;
         if(down&KEY_A) {
-            if(riding) riding=0;
-            else {
+            if(riding) {
+                riding=0;
+                playTone(420.0f,.12f,.55f);
+            } else {
                 float ds=(playerX-scooterX)*(playerX-scooterX)+(playerZ-scooterZ)*(playerZ-scooterZ);
                 float dc=(playerX-carX)*(playerX-carX)+(playerZ-carZ)*(playerZ-carZ);
-                if(ds<dc && ds<3.0f) riding=1;
-                else if(dc<3.0f) riding=2;
+                if(ds<dc && ds<3.0f) {
+                    riding=1;
+                    playTone(660.0f,.12f,.55f);
+                } else if(dc<3.0f) {
+                    riding=2;
+                    playTone(740.0f,.14f,.55f);
+                }
             }
         }
         // Touchscreen drag rotates the camera; vertical drag adjusts camera height.
@@ -503,6 +543,7 @@ int main(void) {
     shaderProgramFree(&prog);
     DVLB_Free(dvlb);
     C3D_Fini();
+    if(audioReady) ndspExit();
     gfxExit();
     return 0;
 }
