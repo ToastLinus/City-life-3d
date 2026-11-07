@@ -90,18 +90,8 @@ int main(void){
  printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HGPU COLOR DIAGNOSTIC");printf("\x1b[7;1HRED / GREEN / YELLOW");printf("\x1b[9;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
  while(aptMainLoop()){
   hidScanInput();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
-  if(down&KEY_A){if(riding==1){riding=0;scooterX=playerX;scooterY=playerY;}else if(riding==2){riding=0;carX=playerX;carY=playerY;}else{float ds=(playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY);float dc=(playerX-carX)*(playerX-carX)+(playerY-carY)*(playerY-carY);if(ds<dc&&ds<625.0f)riding=1;else if(dc<625.0f)riding=2;}}
-  float speed=riding==2?3.2f:(riding==1?2.5f:1.6f);
-  if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
-  if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
-  if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
-  if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
-  if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;
-   npc2X+=0.16f*npc2Direction;if(npc2X>366.0f)npc2Direction=-1;if(npc2X<310.0f)npc2Direction=1;}
-  if(riding==1){scooterX=playerX;scooterY=playerY;}else if(riding==2){carX=playerX;carY=playerY;}
-  city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
-  scooter(scooterX,scooterY);car(carX,carY);
-  if(!riding)player();
+  /* Keep this diagnostic completely static: only the three test triangles are drawn. */
+  city();
   uploadVertices();
   printf("\x1b[14;1HGPU COLOR TEST");
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x202020FF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
