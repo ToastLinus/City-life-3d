@@ -70,7 +70,6 @@ static void addTerrainMesh(void) {
 static void liftNewVertices(int start,float amount){for(int i=start;i<vertexCount;i++)vertices[i].y+=amount;}
 static Pos positions[MAX_VERTICES];
 static Clr colors[MAX_VERTICES];
-static int vertexCount=0;
 static void *posVbo,*colorVbo;
 static DVLB_s *dvlb;
 static shaderProgram_s prog;
