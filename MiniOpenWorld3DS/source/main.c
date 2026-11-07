@@ -117,6 +117,7 @@ int main(void){
   city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
   scooter(scooterX,scooterY);car(carX,carY);
   if(!riding)player();
+  turnScene();
   memcpy(vbo,v,n*sizeof(Vtx));
   printf("\x1b[12;1H%s",riding?"Scooter: ON  A: Park":"Scooter: OFF  Find blue scooter");
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
