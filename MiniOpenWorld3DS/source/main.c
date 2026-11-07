@@ -277,6 +277,21 @@ static void buildCity(void) {
     }
     box(0.0f,.0f,-9.0f,2.0f,1.5f,1.2f,.20f,.54f,.86f);
     box(0.0f,1.55f,-9.0f,1.25f,.12f,.85f,.92f,.82f,.38f);
+    /* Small street details make the test district feel like a lived-in town. */
+    for(int z=-10;z<=10;z+=5) {
+        box(-4.65f,.0f,(float)z,.10f,2.65f,.10f,.24f,.25f,.27f);
+        box(-4.65f,2.55f,(float)z,.42f,.18f,.42f,.96f,.82f,.42f);
+        box(4.65f,.0f,(float)z,.10f,2.65f,.10f,.24f,.25f,.27f);
+        box(4.65f,2.55f,(float)z,.42f,.18f,.42f,.96f,.82f,.42f);
+    }
+    /* Side-street shopfront details and flower planters. */
+    box(-5.0f,1.05f,2.58f,1.15f,.34f,.08f,.88f,.76f,.28f);
+    box(-5.0f,.05f,2.64f,.62f,.42f,.08f,.28f,.18f,.12f);
+    for(int i=0;i<5;i++) {
+        float px=-5.0f+(float)i*.42f;
+        box(px,.12f,3.15f,.22f,.22f,.22f,.22f,.40f,.18f);
+        box(px,.34f,3.15f,.28f,.24f,.28f,.92f,.42f,.56f);
+    }
 }
 static void uploadVertices(void) {
     for(int i=0;i<vertexCount;i++) {
@@ -440,6 +455,9 @@ int main(void) {
         person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
+        /* Independent traffic scooter: it has its own position and heading. */
+        scooterAt(trafficScooterX,trafficScooterZ,0.0f);
+        scooterRider(trafficScooterX,trafficScooterZ,0.0f);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
         float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
