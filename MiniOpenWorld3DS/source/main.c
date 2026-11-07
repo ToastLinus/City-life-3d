@@ -19,6 +19,53 @@ static Vtx bayreuthVertices[MAX_MAP_VERTICES];
 static int bayreuthVertexCount=0;
 static int bayreuthTileX=999999, bayreuthTileZ=999999;
 static int bayreuthReady=0;
+#define TERRAIN_SAMPLES 9
+typedef struct { int32_t x,z; float h[81]; } TerrainTile;
+static TerrainTile terrainTiles[9];
+static int terrainTileCount=0;
+static float terrainBaseHeight=0.0f;
+static float terrainHeightRaw(float x,float z) {
+ int tx=(int)floorf(x/256.0f), tz=(int)floorf(z/256.0f);
+ float fx=(x-(float)tx*256.0f)/32.0f, fz=(z-(float)tz*256.0f)/32.0f;
+ if(fx<0)fx=0; if(fx>8)fx=8; if(fz<0)fz=0; if(fz>8)fz=8;
+ for(int t=0;t<terrainTileCount;t++) if(terrainTiles[t].x==tx && terrainTiles[t].z==tz) {
+  int x0=(int)fx,z0=(int)fz,x1=x0<8?x0+1:x0,z1=z0<8?z0+1:z0;
+  float ax=fx-x0,az=fz-z0;
+  float h00=terrainTiles[t].h[z0*9+x0],h10=terrainTiles[t].h[z0*9+x1];
+  float h01=terrainTiles[t].h[z1*9+x0],h11=terrainTiles[t].h[z1*9+x1];
+  float a=h00+(h10-h00)*ax,b=h01+(h11-h01)*ax;
+  return a+(b-a)*az;
+ }
+ return terrainBaseHeight;
+}
+static float terrainHeight(float x,float z){return terrainHeightRaw(x,z)-terrainBaseHeight;}
+static void loadTerrainTiles(void) {
+ FILE *f=fopen("romfs:/bayreuth-dem.bin","rb"); unsigned char h[16]; terrainTileCount=0;
+ if(!f)return;
+ if(fread(h,1,16,f)!=16 || memcmp(h,"BTH1",4)!=0 || h[4]!=1 || h[5]!=0 || h[6]!=9 || h[7]!=0){fclose(f);return;}
+ uint32_t count=(uint32_t)h[12]|((uint32_t)h[13]<<8)|((uint32_t)h[14]<<16)|((uint32_t)h[15]<<24);
+ if(count>100000u){fclose(f);return;}
+ for(uint32_t i=0;i<count;i++){
+  unsigned char th[8]; float values[81];
+  if(fread(th,1,8,f)!=8 || fread(values,sizeof(float),81,f)!=81)break;
+  int32_t tx=(int32_t)((uint32_t)th[0]|((uint32_t)th[1]<<8)|((uint32_t)th[2]<<16)|((uint32_t)th[3]<<24));
+  int32_t tz=(int32_t)((uint32_t)th[4]|((uint32_t)th[5]<<8)|((uint32_t)th[6]<<16)|((uint32_t)th[7]<<24));
+  if(tx<bayreuthTileX-1||tx>bayreuthTileX+1||tz<bayreuthTileZ-1||tz>bayreuthTileZ+1)continue;
+  if(terrainTileCount<9){TerrainTile *tile=&terrainTiles[terrainTileCount++];tile->x=tx;tile->z=tz;memcpy(tile->h,values,sizeof(values));}
+ }
+ fclose(f); terrainBaseHeight=terrainHeightRaw(0.0f,0.0f);
+}
+static void addTerrainMesh(void) {
+ for(int t=0;t<terrainTileCount;t++)for(int z=0;z<8;z++)for(int x=0;x<8;x++){
+  TerrainTile *tile=&terrainTiles[t];
+  float x0=tile->x*256.0f+x*32.0f,x1=x0+32.0f,z0=tile->z*256.0f+z*32.0f,z1=z0+32.0f;
+  float h00=tile->h[z*9+x]-terrainBaseHeight,h10=tile->h[z*9+x+1]-terrainBaseHeight;
+  float h01=tile->h[(z+1)*9+x]-terrainBaseHeight,h11=tile->h[(z+1)*9+x+1]-terrainBaseHeight;
+  float shade=.34f+(h00+h10+h01+h11)*.0012f;if(shade<.22f)shade=.22f;if(shade>.48f)shade=.48f;
+  if(vertexCount+6<=MAX_MAP_VERTICES)quad(V(x0,h00,z0,.22f,shade,.25f),V(x1,h10,z0,.24f,shade+.02f,.27f),V(x1,h11,z1,.22f,shade,.24f),V(x0,h01,z1,.20f,shade-.01f,.23f));
+ }
+}
+static void liftNewVertices(int start,float amount){for(int i=start;i<vertexCount;i++)vertices[i].y+=amount;}
 static Pos positions[MAX_VERTICES];
 static Clr colors[MAX_VERTICES];
 static int vertexCount=0;
@@ -345,7 +392,8 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             if(len<.05f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
-            quad(V(x0+ox,.012f,z0+oz,.19f,.20f,.22f),V(x1+ox,.012f,z1+oz,.19f,.20f,.22f),V(x1-ox,.012f,z1-oz,.19f,.20f,.22f),V(x0-ox,.012f,z0-oz,.19f,.20f,.22f));
+            float y0=terrainHeight(x0,z0)+.055f,y1=terrainHeight(x1,z1)+.055f;
+            quad(V(x0+ox,y0,z0+oz,.19f,.20f,.22f),V(x1+ox,y1,z1+oz,.19f,.20f,.22f),V(x1-ox,y1,z1-oz,.19f,.20f,.22f),V(x0-ox,y0,z0-oz,.19f,.20f,.22f));
         }
     } else if(kind==BT3D_KIND_BUILDING && count>=3) {
         float bx=(float)tx*256.0f,bz=(float)tz*256.0f;
@@ -354,14 +402,15 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
             float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
             if(vertexCount+3>MAX_MAP_VERTICES) return -1;
-            tri(V(ax,4.0f,az,.66f,.48f,.34f),V(px,4.0f,pz,.72f,.55f,.40f),V(qx,4.0f,qz,.62f,.44f,.31f));
+            tri(V(ax,terrainHeight(ax,az)+4.0f,az,.66f,.48f,.34f),V(px,terrainHeight(px,pz)+4.0f,pz,.72f,.55f,.40f),V(qx,terrainHeight(qx,qz)+4.0f,qz,.62f,.44f,.31f));
         }
         for(uint16_t i=0;i<count;i++) {
             uint16_t j=(uint16_t)((i+1)%count);
             float ax=bx+(float)points[i].x_quarter_m*.25f,az=bz+(float)points[i].z_quarter_m*.25f;
             float px=bx+(float)points[j].x_quarter_m*.25f,pz=bz+(float)points[j].z_quarter_m*.25f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
-            quad(V(ax,.02f,az,.48f,.39f,.31f),V(px,.02f,pz,.48f,.39f,.31f),V(px,4.0f,pz,.66f,.52f,.39f),V(ax,4.0f,az,.66f,.52f,.39f));
+            float ay=terrainHeight(ax,az),py=terrainHeight(px,pz);
+            quad(V(ax,ay,az,.48f,.39f,.31f),V(px,py,pz,.48f,.39f,.31f),V(px,py+4.0f,pz,.66f,.52f,.39f),V(ax,ay+4.0f,az,.66f,.52f,.39f));
         }
     }
     return 0;
@@ -370,7 +419,9 @@ static void rebuildBayreuthMap(void) {
     FILE *file; Bt3dMap map; Bt3dPoint points[4096];
     int saved=vertexCount;
     bayreuthTileX=(int)floorf(playerX/256.0f); bayreuthTileZ=(int)floorf(playerZ/256.0f);
+    loadTerrainTiles();
     vertexCount=0;
+    addTerrainMesh();
     file=fopen("romfs:/bayreuth-tiles.bin","rb");
     if(file && bt3d_open(file,&map)==0) {
         while(map.tiles_read<map.tile_count) {
@@ -559,45 +610,45 @@ int main(void) {
 
         if(!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ) rebuildBayreuthMap();
         vertexCount=0;
-        box(0.0f,-.18f,0.0f,600.0f,.25f,600.0f,.26f,.58f,.29f);
+        box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
         if(bayreuthReady && vertexCount+bayreuthVertexCount<MAX_VERTICES) {
             memcpy(&vertices[vertexCount],bayreuthVertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
             vertexCount+=bayreuthVertexCount;
         }
-        person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f);
-        person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f);
-        person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f);
-        person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0,-1.5708f);
-        person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0,-1.5708f);
-        person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
+        { int start=vertexCount; person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[0],npcZ[0])); }
+        { int start=vertexCount; person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[1],npcZ[1])); }
+        { int start=vertexCount; person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[2],npcZ[2])); }
+        { int start=vertexCount; person(npcX[3],npcZ[3],.84f,.66f,.22f,npcWalkPhase[3],0,-1.5708f); liftNewVertices(start,terrainHeight(npcX[3],npcZ[3])); }
+        { int start=vertexCount; person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0,-1.5708f); liftNewVertices(start,terrainHeight(npcX[4],npcZ[4])); }
+        { int start=vertexCount; person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f); liftNewVertices(start,terrainHeight(npcX[5],npcZ[5])); }
         /* Only the player's own scooter is spawned here. There is no NPC traffic scooter. */
-        vehicle(scooterX,scooterZ,.12f,.68f,.86f);
-        if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
-        vehicle(carX,carZ,.86f,.25f,.18f);
+        { int start=vertexCount; vehicle(scooterX,scooterZ,.12f,.68f,.86f); liftNewVertices(start,terrainHeight(scooterX,scooterZ)); }
+        { int start=vertexCount; if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw); liftNewVertices(start,terrainHeight(scooterX,scooterZ)); }
+        { int start=vertexCount; vehicle(carX,carZ,.86f,.25f,.18f); liftNewVertices(start,terrainHeight(carX,carZ)); }
         // Draw two independent traffic vehicles in opposite lanes.
         float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
         int savedStyle=vehicleStyle;
         carX=trafficCarX; carZ=trafficCarZ; carYaw=trafficCarYaw;
         vehicleStyle=1;
-        vehicle(trafficCarX,trafficCarZ,.72f,.62f,.18f);
+        { int start=vertexCount; vehicle(trafficCarX,trafficCarZ,.72f,.62f,.18f); liftNewVertices(start,terrainHeight(trafficCarX,trafficCarZ)); }
         carX=trafficCar2X; carZ=trafficCar2Z; carYaw=trafficCar2Yaw;
         vehicleStyle=2;
-        vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f);
+        { int start=vertexCount; vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f); liftNewVertices(start,terrainHeight(trafficCar2X,trafficCar2Z)); }
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         vehicleStyle=savedStyle;
-        if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw);
+        { int start=vertexCount; if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw); liftNewVertices(start,terrainHeight(playerX,playerZ)); }
         uploadVertices();
 
         C3D_FVec eye, look;
         float viewYaw=(riding==2 && firstPerson)?carYaw:cameraYaw;
         if(firstPerson) {
-            eye=FVec3_New(playerX,1.48f,playerZ);
-            look=FVec3_New(playerX-sinf(viewYaw)*10.0f,
-                           1.48f+(cameraPitch-1.5f)*0.45f,
-                           playerZ-cosf(viewYaw)*10.0f);
+            float groundY=terrainHeight(playerX,playerZ);
+            eye=FVec3_New(playerX,groundY+1.48f,playerZ);
+            look=FVec3_New(playerX-sinf(viewYaw)*10.0f,groundY+1.48f+(cameraPitch-1.5f)*0.45f,playerZ-cosf(viewYaw)*10.0f);
         } else {
-            eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
-            look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,0.7f,playerZ-cosf(cameraYaw)*1.0f);
+            float groundY=terrainHeight(playerX,playerZ);
+            eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,groundY+5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
+            look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,groundY+0.7f,playerZ-cosf(cameraYaw)*1.0f);
         }
         C3D_FVec up=FVec3_New(0.0f,1.0f,0.0f);
         Mtx_LookAt(&view,eye,look,up,true);
