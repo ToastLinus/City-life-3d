@@ -11,7 +11,11 @@ import time
 import urllib.parse
 import urllib.request
 
+# Public global instances. Private.coffee is an independent operator; the
+# VK Maps endpoint is an additional fallback if the European instances are busy.
 ENDPOINTS = [
+    "https://overpass.private.coffee/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
@@ -30,25 +34,40 @@ out body geom;
 def fetch():
     data = urllib.parse.urlencode({"data": QUERY}).encode()
     last_error = None
+    # Two attempts per independent provider, with bounded backoff. This avoids
+    # hammering a busy public server while still surviving transient 502/504s.
     for endpoint in ENDPOINTS:
-        request = urllib.request.Request(
-            endpoint,
-            data=data,
-            headers={
-                "User-Agent": "CITY-LIFE-3D map asset builder/1.1 (OSM attribution included)",
-                "Accept": "application/json",
-            },
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=210) as response:
-                payload = json.load(response)
-            if payload.get("remark"):
-                raise RuntimeError(payload["remark"])
-            return payload
-        except Exception as exc:
-            last_error = exc
-            print(f"Overpass endpoint failed: {endpoint}: {exc}", file=sys.stderr)
-            time.sleep(2)
+        for attempt in range(2):
+            request = urllib.request.Request(
+                endpoint,
+                data=data,
+                headers={
+                    "User-Agent": "CITY-LIFE-3D map asset builder/1.2 (OSM attribution included; one-time Bayreuth map export)",
+                    "Accept": "application/json",
+                    "Accept-Encoding": "gzip",
+                },
+            )
+            try:
+                with urllib.request.urlopen(request, timeout=150) as response:
+                    payload = json.load(response)
+                if payload.get("remark"):
+                    raise RuntimeError(payload["remark"])
+                return payload
+            except Exception as exc:
+                last_error = exc
+                retry_after = 0
+                if isinstance(exc, urllib.error.HTTPError):
+                    try:
+                        retry_after = int(exc.headers.get("Retry-After", "0"))
+                    except (TypeError, ValueError):
+                        retry_after = 0
+                print(
+                    f"Overpass attempt {attempt + 1}/2 failed: {endpoint}: {exc}",
+                    file=sys.stderr,
+                )
+                if attempt == 0:
+                    time.sleep(min(max(retry_after, 3), 20))
+        print(f"Moving to next independent Overpass provider: {endpoint}", file=sys.stderr)
     raise RuntimeError(f"All Overpass endpoints failed: {last_error}")
 
 
