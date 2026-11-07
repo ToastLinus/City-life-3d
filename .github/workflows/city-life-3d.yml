@@ -95,6 +95,15 @@ jobs:
           MAKEROM="$(find /tmp/makerom -type f -name makerom | head -n 1)"
           test -n "$MAKEROM"
           chmod +x "$MAKEROM"
+      - name: Install 3dstool
+        run: |
+          wget -q https://github.com/dnasdw/3dstool/releases/download/v1.2.6/3dstool_linux_x86_64.tar.gz -O /tmp/3dstool.tar.gz
+          mkdir -p /tmp/3dstool
+          tar -xzf /tmp/3dstool.tar.gz -C /tmp/3dstool
+          TOOL="$(find /tmp/3dstool -type f -name 3dstool | head -n 1)"
+          test -n "$TOOL"
+          chmod +x "$TOOL"
+          echo "$(dirname "$TOOL")" >> "$GITHUB_PATH"
       - name: Build RomFS image
         run: 3dstool -cvtf romfs MiniOpenWorld3DS/romfs.bin --romfs-dir MiniOpenWorld3DS/romfs
 
