@@ -91,3 +91,11 @@ Der aktuelle Stand ist ein früher Szenenprototyp mit D-Pad-Bewegung, einem einf
 7. Erst nach stabilen Tests die weiteren Stadtviertel und auswählbaren Welten ausbauen.
 
 Jeder Meilenstein muss auf echter 3DS-Hardware oder in einem geeigneten Testlauf geprüft werden. Eine erfolgreiche Kompilierung allein bedeutet noch nicht, dass das Spiel auf dem 3DS korrekt läuft.
+
+
+### Technische Vorarbeit nach Build 23
+- Build 23 wurde am 7. November 2026 von GitHub Actions erfolgreich gebaut und als `CITY-LIFE-3D.cia` veröffentlicht. Die Änderung an der Bildausgabe ist kompiliert, aber noch nicht auf echter Hardware bestätigt.
+- Die offizielle Citro3D-Schnittstelle wurde geprüft: `Mtx_PerspTilt` erzeugt die perspektivische Projektion für den oberen 3DS-Bildschirm; `Mtx_LookAt` erzeugt die Kamera-View-Matrix; `FVec3_New` erstellt die benötigten 3D-Vektoren.
+- Für die Tiefenverdeckung ist `C3D_DepthTest(true, GPU_GREATER, GPU_WRITE_ALL)` bzw. die passende Vergleichsrichtung anhand des verwendeten Tiefenformats zu prüfen; die konkrete Konfiguration muss vor dem ersten 3D-Test gegen ein offizielles Citro3D-Beispiel abgeglichen werden. Flächen-Culling bleibt zunächst deaktiviert, bis die Dreiecksreihenfolge auf dem Gerät bestätigt ist.
+- Der nächste technische Prototyp soll nur eine kleine Testfläche enthalten: Boden, zwei unterschiedlich hohe Quader, eine einfache Spielfigur und eine Kamera hinter der Figur. Die Kamera wird aus Yaw/Pitch und Abstand berechnet; Touch-Drag ändert ausschließlich diese Winkel. Die Spielfigur bewegt sich relativ zur Kamera, nicht durch Drehen der ganzen Welt.
+- Erst wenn dieser Test sichtbar korrekt ist, werden Stadtgebäude, NPCs und Fahrzeuge auf räumliche X/Y/Z-Modelle umgestellt. Die bisherige flache Szene bleibt bis dahin ausdrücklich ein Prototyp.
