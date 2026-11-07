@@ -268,8 +268,9 @@ int main(void) {
             float moveX=0.0f, moveZ=0.0f;
             if(keys&KEY_UP) { moveX+=forwardX; moveZ+=forwardZ; }
             if(keys&KEY_DOWN) { moveX-=forwardX; moveZ-=forwardZ; }
-            if(keys&KEY_LEFT) { moveX-=rightX; moveZ-=rightZ; }
-            if(keys&KEY_RIGHT) { moveX+=rightX; moveZ+=rightZ; }
+            /* D-pad horizontal input was mirrored on foot; align it with screen space. */
+            if(keys&KEY_LEFT) { moveX+=rightX; moveZ+=rightZ; }
+            if(keys&KEY_RIGHT) { moveX-=rightX; moveZ-=rightZ; }
             /* Keep diagonal movement at the same speed as straight movement. */
             float moveLength=sqrtf(moveX*moveX+moveZ*moveZ);
             if(moveLength>0.001f) {
