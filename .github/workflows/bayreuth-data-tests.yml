@@ -6,11 +6,17 @@ on:
       - main
     paths:
       - 'tools/fetch_bayreuth_map.py'
+      - 'tools/build_bayreuth_tiles.py'
+      - 'MiniOpenWorld3DS/source/bayreuth_tiles.c'
+      - 'MiniOpenWorld3DS/include/bayreuth_tiles.h'
       - 'tests/**'
       - '.github/workflows/bayreuth-data-tests.yml'
   pull_request:
     paths:
       - 'tools/fetch_bayreuth_map.py'
+      - 'tools/build_bayreuth_tiles.py'
+      - 'MiniOpenWorld3DS/source/bayreuth_tiles.c'
+      - 'MiniOpenWorld3DS/include/bayreuth_tiles.h'
       - 'tests/**'
       - '.github/workflows/bayreuth-data-tests.yml'
   workflow_dispatch:
@@ -30,3 +36,9 @@ jobs:
           python-version: '3.x'
       - name: Run geometry converter tests
         run: python -m unittest discover -s tests -v
+      - name: Compile and run 3DS tile-reader tests
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -I MiniOpenWorld3DS/include \
+            MiniOpenWorld3DS/source/bayreuth_tiles.c tests/test_bayreuth_tiles.c \
+            -lm -o /tmp/test_bayreuth_tiles
+          /tmp/test_bayreuth_tiles
