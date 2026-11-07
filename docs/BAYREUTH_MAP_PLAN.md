@@ -36,7 +36,8 @@ Die Gebiete werden anhand der offiziellen Distrikt-/Verkehrszellenkarten abgegli
 - Hammerstatt, St. Georgen, Laineck und St. Johannis
 - Aichig, Seulbitz, Wolfsbach und Oberkonnersreuth
 - Destuben, Thiergarten, Dörnhof, Oberpreuschwitz und weitere Randlagen
-- Unterpreuschwitz als ausdrücklich gewünschter eigener Prüf- und Modellierungsbereich
+- Unterpreuschwitz als ausdrücklich gewünschter eigener Modellierungsbereich: Das amtliche Straßenverzeichnis führt es in Distrikt 38 („Gebiet der früheren Gemeinde Oberpreuschwitz“) zusammen mit Oberpreuschwitz und Dörnhof auf;
+- Wolfsbach sowie Krugshof, Püttelshof, Schlehenberg und Schlehenmühle in Distrikt 39.
 
 Die genaue Zuordnung und Schreibweise jedes Orts wird vor dem Bau gegen offizielle Karten und Kartendaten geprüft. Benachbarte Orte außerhalb der Stadtgrenze werden nicht stillschweigend als Stadtgebiet ausgegeben; sie können als angrenzende Spielwelt-Erweiterung aufgenommen werden.
 
@@ -97,6 +98,8 @@ Ein Modell gilt erst als fertig, wenn es im Spiel anhand von Form und Umgebung e
 
 - Stadt Bayreuth – Stadtgebiet und Flächen-/Straßennetzangaben: https://www.bayreuth.de/rathaus-buergerservice/stadtverwaltung/zahlen-fakten-2/stadtgebiet/
 - Stadt Bayreuth – Stadtdistriktplan (PDF): https://www.bayreuth.de/wp-content/uploads/2016/10/Stadtplan-Stadtdistrikte-Stand-2016.pdf
+- Stadt Bayreuth / SessionNet – amtliches Straßenverzeichnis nach Stadtdistrikten, Stand 12.12.2025 (33-seitiges PDF): https://online-dienste.bayreuth.de/sessionnet/buergerinfo/getfile.asp?id=70313&type=do
+- Stadt Bayreuth – Übersicht der 39 Stadtdistrikte: https://www.bayreuth.de/rathaus-buergerservice/stadtverwaltung/ob-stadtrat-gremien/distriktsvorsteher-ortssprecher/
 - Nahverkehrsplan Bayreuth – Gebietskategorien und 54 Verkehrszellen: https://www.bayreuth.de/wp-content/uploads/2025/02/NVP_Stadt_BT.pdf
 - Stadt Bayreuth – Stadtplan, 3D-Viewer und Geoportal: https://www.bayreuth.de/rathaus-buergerservice/online-service/
 - OpenStreetMap: https://www.openstreetmap.org/ (ODbL beachten)
