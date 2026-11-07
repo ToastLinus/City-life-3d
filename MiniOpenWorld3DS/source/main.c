@@ -29,7 +29,7 @@ static float playerX=0.0f, playerZ=0.0f;
 static float npcX[NPC_COUNT]={-3.35f,-3.35f,-3.35f,3.35f,3.35f,3.35f};
 static float npcZ[NPC_COUNT]={-8.0f,-2.5f,5.0f,8.0f,2.5f,-5.0f};
 static float npcDirection[NPC_COUNT]={1.0f,1.0f,1.0f,-1.0f,-1.0f,-1.0f};
-static float npcSpeed[NPC_COUNT]={.070f,.064f,.076f,.068f,.073f,.062f};
+static float npcSpeed[NPC_COUNT]={.014f,0.0f,.018f,0.0f,.012f,0.0f};
 static float npcWalkPhase[NPC_COUNT]={0,1,2,3,4,5};
 static float playerYaw=0.0f, playerJump=0.0f, playerJumpVelocity=0.0f;
 static float carX=2.5f, carZ=2.0f;
@@ -387,7 +387,7 @@ int main(void) {
         /* Sidewalk pedestrians move at a visible pace and animate their steps. */
         for(int i=0;i<NPC_COUNT;i++) {
             npcZ[i]+=npcDirection[i]*npcSpeed[i];
-            npcWalkPhase[i]+=.20f;
+            npcWalkPhase[i]+=(npcSpeed[i]>.001f)?.055f:.008f;
             if(npcZ[i] < -11.0f) { npcZ[i]=-11.0f; npcDirection[i]=1.0f; }
             if(npcZ[i] > 11.0f) { npcZ[i]=11.0f; npcDirection[i]=-1.0f; }
         }
@@ -405,6 +405,7 @@ int main(void) {
         person(npcX[4],npcZ[4],.32f,.72f,.42f,npcWalkPhase[4],0,-1.5708f);
         person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
+        if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
         float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
@@ -417,15 +418,6 @@ int main(void) {
         vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f);
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         vehicleStyle=savedStyle;
-        /* Traffic scooter is independent from the player's scooter and trick input. */
-        int savedTrick=scooterTrick;
-        float savedScooterYaw=scooterYaw;
-        scooterTrick=0;
-        scooterYaw=trafficScooterYaw;
-        scooter(trafficScooterX,trafficScooterZ);
-        scooterRider(trafficScooterX,trafficScooterZ,trafficScooterYaw);
-        scooterYaw=savedScooterYaw;
-        scooterTrick=savedTrick;
         if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw);
         uploadVertices();
 
