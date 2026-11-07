@@ -75,9 +75,6 @@ jobs:
 
   package:
     runs-on: ubuntu-latest
-    container:
-      image: devkitpro/devkitarm
-      options: --user 1001
     needs: build
     steps:
       - name: Checkout
