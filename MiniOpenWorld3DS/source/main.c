@@ -89,7 +89,7 @@ static void city(void){
 int main(void){
  gfxInitDefault(); consoleInit(GFX_BOTTOM,NULL); startAudio(); if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)){if(audioReady)ndspExit();gfxExit();return 1;}
  target=C3D_RenderTargetCreate(240,400,GPU_RB_RGBA8,GPU_RB_DEPTH24_STENCIL8); C3D_RenderTargetSetOutput(target,GFX_TOP,GFX_LEFT,XFER);
- dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
+ dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); C3D_CullFace(GPU_CULL_NONE); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
  C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);posVbo=linearAlloc(sizeof(positions));colorVbo=linearAlloc(sizeof(colors));city();uploadVertices();C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,posVbo,sizeof(Pos),1,0x0);BufInfo_Add(bi,colorVbo,sizeof(Clr),1,0x1);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
  printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1H3D CAMERA: NEXT UPDATE");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
