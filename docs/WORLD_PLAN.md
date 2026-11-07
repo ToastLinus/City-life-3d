@@ -79,14 +79,15 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 
 ## Status und verbindliche Meilensteine
 
-Der aktuelle Stand ist ein früher 3D-Szenenprototyp mit D-Pad-Bewegung, einem einfachen Spieler, einem laufenden Passanten sowie einem Roller und einem kompakten Auto als einsteigbaren Fahrzeug-Prototypen. Mit A kann der Spieler in die Nähe eines Fahrzeugs gehen, einsteigen und es mit dem Steuerkreuz bewegen; beim Aussteigen bleibt es an der neuen Position. Die CI-Pipeline hat einen Build erfolgreich kompiliert, als CIA verpackt und eine GitHub-Release-Datei veröffentlicht. Ein Test auf echter 3DS-Hardware ist weiterhin offen; Darstellung, Steuerung und Leistung müssen dort geprüft werden.
+Der aktuelle Stand ist ein früher Szenenprototyp mit D-Pad-Bewegung, einem einfachen Spieler, laufenden Passanten sowie einem Roller und einem kompakten Auto als einsteigbaren Fahrzeug-Prototypen. Wichtig: Die derzeitige Darstellung verwendet noch flache, bildschirmorientierte Geometrie und eine einfache Drehtransformation. Sie ist daher noch keine echte räumliche 3D-Kamera und darf nicht als fertige 3D-Stadt bezeichnet werden. Mit A kann der Spieler in die Nähe eines Fahrzeugs gehen, einsteigen und es mit dem Steuerkreuz bewegen; beim Aussteigen bleibt es an der neuen Position. Die CI-Pipeline hat einen Build erfolgreich kompiliert, als CIA verpackt und eine GitHub-Release-Datei veröffentlicht. Ein Test auf echter 3DS-Hardware ist weiterhin offen; Darstellung, Steuerung und Leistung müssen dort geprüft werden.
 
 ### Reihenfolge bis zur ersten spielbaren CIA
 1. Build-Pipeline zuverlässig kompilieren und eine gültige CIA erzeugen.
 2. Spielfigur, Eingabesteuerung, Kollisionsgrenzen und Kamera in einem kleinen Testgebiet implementieren.
-3. Fahrzeug-Prototyp mit Ein-/Aussteigen und einfacher Fahrphysik ergänzen – erste Version mit Roller und Auto ist im Code; anschließend auf echter Hardware testen.
-4. Ein begehbares Geschäft mit Regalen, Kaufaktion und einfachem Inventar bauen.
-5. Wenige NPCs mit einfachen Wegpunkten und Dialogen ergänzen.
-6. Erst nach stabilen Tests die weiteren Stadtviertel und auswählbaren Welten ausbauen.
+3. Echte 3D-Grundlage aufbauen: räumliche X/Y/Z-Geometrie, Perspektiv-Projektionsmatrix, View-Matrix mit Kamera hinter der Figur bzw. dem Fahrzeug, Tiefentest und Kamera-relative Bewegung. Für die Implementierung sind die Citro3D-Matrixfunktionen `Mtx_Persp` und `Mtx_LookAt` in der offiziellen `maths.h`-Schnittstelle vorhanden. Touch-Drag verändert anschließend Yaw und Pitch der Kamera. Erst den kleinen 3D-Testbereich bauen und kompilieren, bevor die Stadt erweitert wird.
+4. Fahrzeug-Prototyp mit Ein-/Aussteigen und einfacher Fahrphysik ergänzen – erste Bewegungs-Prototypen mit Roller und Auto sind im Code; anschließend auf echter Hardware testen.
+5. Ein begehbares Geschäft mit Regalen, Kaufaktion und einfachem Inventar bauen.
+6. Wenige NPCs mit einfachen Wegpunkten und Dialogen ergänzen.
+7. Erst nach stabilen Tests die weiteren Stadtviertel und auswählbaren Welten ausbauen.
 
 Jeder Meilenstein muss auf echter 3DS-Hardware oder in einem geeigneten Testlauf geprüft werden. Eine erfolgreiche Kompilierung allein bedeutet noch nicht, dass das Spiel auf dem 3DS korrekt läuft.
