@@ -73,10 +73,36 @@ static void box(float x,float y,float z,float w,float h,float d,float r,float g,
 }
 static void house(float x,float z,float w,float h,float d,float r,float g,float b) {
     box(x,0.0f,z,w,h,d,r,g,b);
-    box(x,h,z,w*1.08f,.22f,d*1.08f,.34f,.20f,.16f);
-    box(x-w*.22f,.0f,z-d*.505f,w*.22f,h*.38f,.035f,.24f,.52f,.68f);
-    box(x+w*.22f,.0f,z-d*.505f,w*.22f,h*.38f,.035f,.24f,.52f,.68f);
-    box(x,.0f,z-d*.53f,w*.16f,h*.55f,.04f,.32f,.19f,.12f);
+    /* Stylized gabled roof instead of a flat floating slab. */
+    float ex=w*.60f, ez=d*.57f, ridge=h+.72f;
+    Vtx lf=V(x-ex,h,z-ez,.48f,.22f,.16f), rf=V(x+ex,h,z-ez,.48f,.22f,.16f);
+    Vtx lb=V(x-ex,h,z+ez,.40f,.17f,.13f), rb=V(x+ex,h,z+ez,.40f,.17f,.13f);
+    Vtx rfTop=V(x,ridge,z-ez,.58f,.28f,.19f), rbTop=V(x,ridge,z+ez,.52f,.23f,.16f);
+    quad(lf,rfTop,rbTop,lb);
+    quad(rfTop,rf,rb,rbTop);
+    tri(lf,rf,rfTop); tri(lb,rbTop,rb);
+    /* Front windows have contrasting frames and visible glass. */
+    float front=z-d*.505f;
+    box(x-w*.25f,h*.52f,front,w*.24f,h*.24f,.055f,.16f,.17f,.19f);
+    box(x-w*.25f,h*.52f,front-.035f,w*.19f,h*.19f,.025f,.28f,.67f,.82f);
+    box(x+w*.25f,h*.52f,front,w*.24f,h*.24f,.055f,.16f,.17f,.19f);
+    box(x+w*.25f,h*.52f,front-.035f,w*.19f,h*.19f,.025f,.28f,.67f,.82f);
+    box(x,.0f,front-.035f,w*.17f,h*.55f,.07f,.32f,.19f,.12f);
+    box(x+w*.25f,h*.52f,front-.052f,.035f,h*.20f,.018f,.80f,.84f,.82f);
+    box(x-w*.25f,h*.52f,front-.052f,.035f,h*.20f,.018f,.80f,.84f,.82f);
+}
+static void tree(float x,float z) {
+    box(x,0.0f,z,.24f,1.25f,.24f,.36f,.20f,.12f);
+    /* Two faceted foliage tiers give the trees a chunky cartoon silhouette. */
+    float y0=1.0f, y1=2.25f, radius=.92f;
+    Vtx tip=V(x,y1,z,.12f,.42f,.18f);
+    Vtx p[4]={V(x-radius,y0,z,.12f,.50f,.20f),V(x,y0,z-radius,.16f,.58f,.22f),
+              V(x+radius,y0,z,.10f,.43f,.16f),V(x,y0,z+radius,.08f,.38f,.14f)};
+    for(int i=0;i<4;i++) tri(p[i],p[(i+1)%4],tip);
+    Vtx tip2=V(x,1.65f,z,.18f,.58f,.22f);
+    Vtx q[4]={V(x-.67f,0.82f,z,.18f,.62f,.24f),V(x,0.82f,z-.67f,.14f,.54f,.20f),
+              V(x+.67f,0.82f,z,.10f,.48f,.18f),V(x,0.82f,z+.67f,.08f,.42f,.15f)};
+    for(int i=0;i<4;i++) tri(q[i],q[(i+1)%4],tip2);
 }
 static void person(float x,float z,float r,float g,float b,float phase,float lift,float yaw) {
     /* Head, torso, arms and animated legs; face points toward local -Z. */
@@ -236,10 +262,12 @@ static void buildCity(void) {
     house(-5.0f,1.0f,3.4f,3.6f,3.0f,.50f,.67f,.83f);
     house(5.0f,-6.0f,3.2f,3.0f,3.0f,.78f,.56f,.34f);
     house(5.0f,1.0f,3.0f,3.8f,3.0f,.68f,.48f,.72f);
+    /* Raised sidewalks separate pedestrians from the road. */
+    box(-4.05f,-.01f,0.0f,2.5f,.12f,30.0f,.62f,.61f,.56f);
+    box(4.05f,-.01f,0.0f,2.5f,.12f,30.0f,.62f,.61f,.56f);
     for(int i=0;i<4;i++) {
         float x=-8.0f+(float)i*5.3f;
-        box(x,0.0f,5.5f,.22f,1.4f,.22f,.38f,.23f,.12f);
-        box(x,.95f,5.5f,1.5f,.9f,1.5f,.12f,.48f,.20f);
+        tree(x,5.5f);
     }
     box(0.0f,.0f,-9.0f,2.0f,1.5f,1.2f,.20f,.54f,.86f);
     box(0.0f,1.55f,-9.0f,1.25f,.12f,.85f,.92f,.82f,.38f);
