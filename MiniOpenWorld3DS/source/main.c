@@ -16,12 +16,24 @@ static void house(float x,float y,float w,float h,float r,float g,float b){
  T(a,bb,c);T(a,c,d);T(d,c,g1);T(d,g1,hh);T(bb,f,g1);T(bb,g1,c);T(e,f,g1);T(e,g1,hh);
 }
 static float playerX=200.0f, playerY=184.0f;
-static void player(void){
- /* Simple, colorful placeholder character drawn above the street. */
- Q(playerX-5.0f,playerY-3.0f,10.0f,13.0f,.18f,.12f,.42f,.92f);
- T(P(playerX-5.0f,playerY-3.0f,.17f,.12f,.42f,.92f),P(playerX+5.0f,playerY-3.0f,.17f,.12f,.42f,.92f),P(playerX,playerY-12.0f,.17f,1.0f,.78f,.48f));
- Q(playerX-3.0f,playerY-18.0f,6.0f,6.0f,.16f,.96f,.72f,.48f);
+static float scooterX=244.0f, scooterY=184.0f;
+static float npcX=78.0f;
+static int riding=0, npcDirection=1, frameCount=0;
+static void person(float x,float y,float shirtR,float shirtG,float shirtB){
+ Q(x-4.0f,y-3.0f,8.0f,12.0f,.18f,shirtR,shirtG,shirtB);
+ T(P(x-4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x+4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x,y-11.0f,.17f,shirtR,shirtG,shirtB));
+ Q(x-3.0f,y-18.0f,6.0f,6.0f,.16f,.96f,.72f,.48f);
 }
+static void scooter(float x,float y){
+ /* Small original low-poly scooter; wheels are simple dark blocks. */
+ Q(x-12.0f,y+1.0f,6.0f,5.0f,.22f,.12f,.13f,.16f);
+ Q(x+7.0f,y+1.0f,6.0f,5.0f,.22f,.12f,.13f,.16f);
+ Q(x-8.0f,y-4.0f,17.0f,4.0f,.20f,.15f,.72f,.88f);
+ Q(x+5.0f,y-12.0f,3.0f,9.0f,.19f,.15f,.72f,.88f);
+ Q(x+4.0f,y-13.0f,7.0f,2.0f,.18f,.18f,.18f,.2f);
+ Q(x-2.0f,y-8.0f,6.0f,3.0f,.17f,.96f,.78f,.32f);
+}
+static void player(void){ person(playerX,playerY,.12f,.42f,.92f); }
 static void city(void){
  n=0; Q(0,0,400,240,.9f,.27f,.65f,.32f); Q(0,104,400,50,.8f,.23f,.25f,.29f); Q(172,0,52,240,.79f,.23f,.25f,.29f);
  for(int x=8;x<400;x+=48)Q(x,127,22,3,.7f,.95f,.84f,.48f);
@@ -36,14 +48,22 @@ int main(void){
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
  C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
- printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HSTART: Exit");
+ printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HA: Ride / park scooter");printf("\x1b[10;1HSTART: Exit");
  while(aptMainLoop()){
-  hidScanInput();u32 keys=hidKeysHeld();if(hidKeysDown()&KEY_START)break;
-  if(keys&KEY_LEFT)playerX-=1.6f;if(keys&KEY_RIGHT)playerX+=1.6f;
-  if(keys&KEY_UP)playerY-=1.6f;if(keys&KEY_DOWN)playerY+=1.6f;
+  hidScanInput();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
+  if((down&KEY_A)&&((playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY)<625.0f))riding=!riding;
+  float speed=riding?2.5f:1.6f;
+  if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
+  if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
   if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
   if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
-  city();player();memcpy(vbo,v,n*sizeof(Vtx));
+  if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;}
+  frameCount++;
+  city();person(npcX,178.0f,.88f,.48f,.22f);
+  if(riding)scooter(playerX,playerY);else scooter(scooterX,scooterY);
+  if(!riding)player();
+  memcpy(vbo,v,n*sizeof(Vtx));
+  printf("\x1b[12;1H%s",riding?"Scooter: ON  A: Park":"Scooter: OFF  Find blue scooter");
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
  }
  linearFree(vbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();gfxExit();return 0;
