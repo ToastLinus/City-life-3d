@@ -11,7 +11,7 @@ static DVLB_s* dvlb; static shaderProgram_s prog; static int loc; static C3D_Mtx
 #define AUDIO_RATE 22050
 #define AUDIO_SAMPLES (AUDIO_RATE/30)
 static u32* audioData=NULL; static ndspWaveBuf audioBuf[2]; static bool audioReady=false; static size_t audioOffset=0; static int audioBlock=0;
-static Vtx P(float x,float y,float z,float r,float g,float b){return (Vtx){x,y,z,r,g,b,1};}
+static Vtx P(float x,float y,float z,float r,float g,float b){return (Vtx){x,240.0f-y,z,r,g,b,1};}
 static void T(Vtx a,Vtx b,Vtx c){if(n+3<=600){v[n++]=a;v[n++]=b;v[n++]=c;}}
 static void Q(float x,float y,float w,float h,float z,float r,float g,float b){Vtx a=P(x,y,z,r,g,b),bb=P(x+w,y,z,r,g,b),c=P(x+w,y+h,z,r,g,b),d=P(x,y+h,z,r,g,b);T(a,bb,c);T(a,c,d);}
 static void house(float x,float y,float w,float h,float r,float g,float b){
