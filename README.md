@@ -1,20 +1,14 @@
 # CITY LIFE 3D
 
-Ein eigenständiges, kostenloses Open-World-Stadtspiel für Nintendo 3DS und 3DS XL.
+Kostenloses Stadt- und Erkundungsspiel für Nintendo 3DS / 3DS XL.
 
-**Entwicklung:** ToastLinus  
-**Plattform:** Nintendo 3DS / 3DS XL
+## Geplante Welten
+- Bayreuth, Tokio und Los Angeles
+- Strand- und Küstenregion
+- Gebirgsregion
+- Historisch inspirierte Rom-/Mittelalterregion
 
-## Projektstatus
+## Entwicklungsstand
+Der erste Citro3D-Low-Poly-Grafikprototyp wird aufgebaut. Er ist eine kleine statische 3D-Szene und noch keine begehbare Open World. Die Gebiete werden schrittweise entwickelt und für die 3DS-Hardware optimiert.
 
-Der aktuelle Stand ist ein früher 2D-Top-down-Prototyp mit einer kleinen Stadt, Straßen, Häusern, Bäumen, Park, Spielfigur und Auto-Modus. Das Ziel ist, daraus schrittweise ein farbenfrohes 3D-Stadtspiel zu entwickeln.
-
-## Steuerung
-
-- Steuerkreuz: bewegen
-- A: Auto-Modus ein-/ausschalten
-- START: Spiel beenden
-
-## Bauen und installieren
-
-GitHub Actions soll automatisch eine 3DSX-Datei und eine installierbare CIA erstellen. Nach erfolgreichem Build erscheint die CIA unter **Releases** und kann mit FBI auf dem Nintendo 3DS installiert werden.
+Das Projekt soll kostenlos bleiben und nur eigene oder passend lizenzierte Inhalte verwenden.
