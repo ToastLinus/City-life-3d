@@ -58,9 +58,25 @@ def main():
 
     origin_lon = sum(p[0] for p in points) / len(points)
     origin_lat = sum(p[1] for p in points) / len(points)
-    for lon, lat in points:
-        x, z = project(lon, lat, origin_lon, origin_lat)
-        tile_keys.add((math.floor(x / TILE_SIZE), math.floor(z / TILE_SIZE)))
+    # Match the map converter: include every tile touched by each feature's
+    # bounding box, not just the tiles containing its individual vertices.
+    for feature in document.get("features", []):
+        geometry = feature.get("geometry") or {}
+        rings = []
+        if geometry.get("type") == "LineString":
+            rings = [geometry.get("coordinates", [])]
+        elif geometry.get("type") == "Polygon":
+            rings = geometry.get("coordinates", [])[:1]
+        for ring in rings:
+            local = [project(float(lon), float(lat), origin_lon, origin_lat)
+                     for lon, lat, *_ in ring]
+            if not local:
+                continue
+            min_x, max_x = min(p[0] for p in local), max(p[0] for p in local)
+            min_z, max_z = min(p[1] for p in local), max(p[1] for p in local)
+            for tx in range(math.floor(min_x / TILE_SIZE), math.floor(max_x / TILE_SIZE) + 1):
+                for tz in range(math.floor(min_z / TILE_SIZE), math.floor(max_z / TILE_SIZE) + 1):
+                    tile_keys.add((tx, tz))
 
     dem_path = os.path.join(os.path.dirname(sys.argv[2]) or ".", "copernicus-bayreuth-dem.tif")
     if not os.path.exists(dem_path) or os.path.getsize(dem_path) < 1024 * 1024:
