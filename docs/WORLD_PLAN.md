@@ -79,12 +79,12 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 
 ## Status und verbindliche Meilensteine
 
-Der aktuelle Stand ist ein früher 3D-Szenenprototyp. Im Code gibt es jetzt einen einfachen Platzhalter-Spieler und eine D-Pad-Bewegungssteuerung innerhalb des sichtbaren Testbereichs. Diese Änderung ist noch nicht durch einen erfolgreichen Build oder einen Test auf echter 3DS-Hardware bestätigt. Fahrzeuge, NPCs, Laden-Interaktionen und eine begehbare Welt mit Kollisionen fehlen weiterhin. Die CIA-Build-Pipeline ist im Repository eingerichtet; ein erfolgreich erzeugtes und getestetes CIA-Artefakt für dieses neue Projekt ist noch nicht bestätigt.
+Der aktuelle Stand ist ein früher 3D-Szenenprototyp mit D-Pad-Bewegung, einem einfachen Spieler, einem laufenden Passanten sowie einem Roller und einem kompakten Auto als einsteigbaren Fahrzeug-Prototypen. Mit A kann der Spieler in die Nähe eines Fahrzeugs gehen, einsteigen und es mit dem Steuerkreuz bewegen; beim Aussteigen bleibt es an der neuen Position. Die CI-Pipeline hat einen Build erfolgreich kompiliert, als CIA verpackt und eine GitHub-Release-Datei veröffentlicht. Ein Test auf echter 3DS-Hardware ist weiterhin offen; Darstellung, Steuerung und Leistung müssen dort geprüft werden.
 
 ### Reihenfolge bis zur ersten spielbaren CIA
 1. Build-Pipeline zuverlässig kompilieren und eine gültige CIA erzeugen.
 2. Spielfigur, Eingabesteuerung, Kollisionsgrenzen und Kamera in einem kleinen Testgebiet implementieren.
-3. Fahrzeug-Prototyp mit Ein-/Aussteigen und einfacher Fahrphysik ergänzen.
+3. Fahrzeug-Prototyp mit Ein-/Aussteigen und einfacher Fahrphysik ergänzen – erste Version mit Roller und Auto ist im Code; anschließend auf echter Hardware testen.
 4. Ein begehbares Geschäft mit Regalen, Kaufaktion und einfachem Inventar bauen.
 5. Wenige NPCs mit einfachen Wegpunkten und Dialogen ergänzen.
 6. Erst nach stabilen Tests die weiteren Stadtviertel und auswählbaren Welten ausbauen.
