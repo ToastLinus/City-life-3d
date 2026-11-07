@@ -79,25 +79,6 @@ static int hitsTree(float x,float z,float radius) {
     }
     return 0;
 }
-static void scooterBox(float x,float y,float z,float w,float h,float d,
-                       float r,float g,float b) {
-    int start=vertexCount;
-    box(x,y,z,w,h,d,r,g,b);
-    for(int i=start;i<vertexCount;i++)
-        transformPoint(&vertices[i].x,&vertices[i].z);
-}
-static void scooter(float x,float z) {
-    objectCenterX=x; objectCenterZ=z; objectYaw=scooterYaw;
-    /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
-    wheel(x,.23f,z-.62f,.23f,.13f);
-    wheel(x,.23f,z+.62f,.23f,.13f);
-    scooterBox(x,.38f,z,.24f,.10f,.88f,.16f,.18f,.20f);
-    scooterBox(x,.43f,z-.48f,.12f,.10f,.18f,.25f,.28f,.30f);
-    scooterBox(x,.70f,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
-    scooterBox(x,.99f,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
-    scooterBox(x,.94f,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
-    objectYaw=0.0f;
-}
 static float carYaw=0.0f, carVelocity=0.0f;
 static float scooterYaw=0.0f;
 static float objectYaw=0.0f, objectCenterX=0.0f, objectCenterZ=0.0f;
@@ -122,6 +103,25 @@ static void wheel(float x,float y,float z,float radius,float width) {
     }
     // Simple metallic wheel hubs.
     box(x,y,z,width*1.08f,radius*.72f,radius*.72f,.48f,.50f,.54f);
+}
+static void scooterBox(float x,float y,float z,float w,float h,float d,
+                       float r,float g,float b) {
+    int start=vertexCount;
+    box(x,y,z,w,h,d,r,g,b);
+    for(int i=start;i<vertexCount;i++)
+        transformPoint(&vertices[i].x,&vertices[i].z);
+}
+static void scooter(float x,float z) {
+    objectCenterX=x; objectCenterZ=z; objectYaw=scooterYaw;
+    /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
+    wheel(x,.23f,z-.62f,.23f,.13f);
+    wheel(x,.23f,z+.62f,.23f,.13f);
+    scooterBox(x,.38f,z,.24f,.10f,.88f,.16f,.18f,.20f);
+    scooterBox(x,.43f,z-.48f,.12f,.10f,.18f,.25f,.28f,.30f);
+    scooterBox(x,.70f,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
+    scooterBox(x,.99f,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
+    scooterBox(x,.94f,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
+    objectYaw=0.0f;
 }
 static void carBox(float x,float y,float z,float w,float h,float d,float r,float g,float b) {
     objectCenterX=carX; objectCenterZ=carZ;
