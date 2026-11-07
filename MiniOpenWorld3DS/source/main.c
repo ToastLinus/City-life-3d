@@ -6,7 +6,7 @@
 #include "vshader_shbin.h"
 
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-#define MAX_VERTICES 600
+#define MAX_VERTICES 3000
 
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 typedef struct { float x,y,z; } Pos;
@@ -29,6 +29,9 @@ static float npc2X=3.0f, npc2Z=-3.0f;
 static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
 static int riding=0;
+static float cameraYaw=0.0f, cameraPitch=0.0f;
+static int touchWasDown=0;
+static touchPosition previousTouch;
 
 static Vtx V(float x,float y,float z,float r,float g,float b) {
     return (Vtx){x,y,z,r,g,b,1.0f};
@@ -151,9 +154,25 @@ int main(void) {
                 else if(dc<3.0f) riding=2;
             }
         }
+        // Touchscreen drag rotates the camera; vertical drag adjusts camera height.
+        if(keys&KEY_TOUCH) {
+            touchPosition touch;
+            hidTouchRead(&touch);
+            if(touchWasDown) {
+                cameraYaw += (float)(touch.px-previousTouch.px)*0.012f;
+                cameraPitch += (float)(touch.py-previousTouch.py)*0.018f;
+                if(cameraPitch < -1.5f) cameraPitch=-1.5f;
+                if(cameraPitch > 5.0f) cameraPitch=5.0f;
+            }
+            previousTouch=touch;
+            touchWasDown=1;
+        } else {
+            touchWasDown=0;
+        }
         float speed=riding==2?.13f:(riding==1?.105f:.075f);
-        if(keys&KEY_LEFT) playerX-=speed;
-        if(keys&KEY_RIGHT) playerX+=speed;
+        // Left/right were reversed on the first test build; correct their direction.
+        if(keys&KEY_LEFT) playerX+=speed;
+        if(keys&KEY_RIGHT) playerX-=speed;
         if(keys&KEY_UP) playerZ-=speed;
         if(keys&KEY_DOWN) playerZ+=speed;
         if(playerX < -12.0f) playerX=-12.0f;
@@ -171,8 +190,8 @@ int main(void) {
         if(!riding) person(playerX,playerZ,.12f,.40f,.92f);
         uploadVertices();
 
-        C3D_FVec eye=FVec3_New(playerX,5.0f,playerZ+8.5f);
-        C3D_FVec look=FVec3_New(playerX,0.7f,playerZ-1.0f);
+        C3D_FVec eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
+        C3D_FVec look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,0.7f,playerZ-cosf(cameraYaw)*1.0f);
         C3D_FVec up=FVec3_New(0.0f,1.0f,0.0f);
         Mtx_LookAt(&view,eye,look,up,true);
         Mtx_Multiply(&viewProjection,&projection,&view);
