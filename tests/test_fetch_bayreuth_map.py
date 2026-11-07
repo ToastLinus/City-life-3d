@@ -1,3 +1,4 @@
+import gzip
 import importlib.util
 import pathlib
 import unittest
@@ -20,6 +21,19 @@ def way(osm_id, tags, coords):
         "type": "way", "id": osm_id, "tags": tags,
         "geometry": [{"lon": lon, "lat": lat} for lon, lat in coords],
     }
+
+
+class ResponseDecodingTests(unittest.TestCase):
+    def test_decodes_plain_json(self):
+        self.assertEqual(MODULE.decode_response(b'{"elements": []}'), {"elements": []})
+
+    def test_decodes_gzip_json_even_without_header(self):
+        compressed = gzip.compress(b'{"elements": []}')
+        self.assertEqual(MODULE.decode_response(compressed), {"elements": []})
+
+    def test_decodes_gzip_json_with_header(self):
+        compressed = gzip.compress(b'{"elements": []}')
+        self.assertEqual(MODULE.decode_response(compressed, "gzip"), {"elements": []})
 
 
 class GeometryConversionTests(unittest.TestCase):
