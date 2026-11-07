@@ -225,15 +225,26 @@ int main(void) {
             if(carVelocity<-.10f) carVelocity=-.10f;
             if(!(keys&(KEY_UP|KEY_DOWN))) carVelocity*=.96f;
             if(fabsf(carVelocity)<.001f) carVelocity=0.0f;
-            if(keys&KEY_LEFT) carYaw-=carVelocity*.10f;
-            if(keys&KEY_RIGHT) carYaw+=carVelocity*.10f;
+            /* Steering direction corrected to match the player's left/right input. */
+            if(keys&KEY_LEFT) carYaw+=carVelocity*.10f;
+            if(keys&KEY_RIGHT) carYaw-=carVelocity*.10f;
             playerX+=sinf(carYaw)*carVelocity;
             playerZ-=cosf(carYaw)*carVelocity;
         } else {
-            if(keys&KEY_LEFT) playerX+=speed;
-            if(keys&KEY_RIGHT) playerX-=speed;
-            if(keys&KEY_UP) playerZ-=speed;
-            if(keys&KEY_DOWN) playerZ+=speed;
+            /* Walk relative to the camera: UP always means toward the view direction. */
+            float forwardX=-sinf(cameraYaw), forwardZ=-cosf(cameraYaw);
+            float rightX=cosf(cameraYaw), rightZ=-sinf(cameraYaw);
+            float moveX=0.0f, moveZ=0.0f;
+            if(keys&KEY_UP) { moveX+=forwardX; moveZ+=forwardZ; }
+            if(keys&KEY_DOWN) { moveX-=forwardX; moveZ-=forwardZ; }
+            if(keys&KEY_LEFT) { moveX-=rightX; moveZ-=rightZ; }
+            if(keys&KEY_RIGHT) { moveX+=rightX; moveZ+=rightZ; }
+            /* Keep diagonal movement at the same speed as straight movement. */
+            float moveLength=sqrtf(moveX*moveX+moveZ*moveZ);
+            if(moveLength>0.001f) {
+                playerX+=(moveX/moveLength)*speed;
+                playerZ+=(moveZ/moveLength)*speed;
+            }
         }
         if(playerX < -12.0f) { playerX=-12.0f; carVelocity=0.0f; }
         if(playerX > 12.0f) { playerX=12.0f; carVelocity=0.0f; }
