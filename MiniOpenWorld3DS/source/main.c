@@ -6,13 +6,16 @@
 #include "vshader_shbin.h"
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
-static Vtx v[600]; static int n=0; static void* vbo;
+typedef struct { float x,y,z; } Pos;
+typedef struct { float r,g,b,a; } Clr;
+static Vtx v[600]; static Pos positions[600]; static Clr colors[600]; static int n=0; static void *posVbo,*colorVbo;
 static DVLB_s* dvlb; static shaderProgram_s prog; static int loc; static C3D_Mtx proj; static C3D_RenderTarget* target;
 #define AUDIO_RATE 22050
 #define AUDIO_SAMPLES (AUDIO_RATE/30)
 static u32* audioData=NULL; static ndspWaveBuf audioBuf[2]; static bool audioReady=false; static size_t audioOffset=0; static int audioBlock=0;
 static Vtx P(float x,float y,float z,float r,float g,float b){return (Vtx){x,240.0f-y,z,r,g,b,1};}
 static void T(Vtx a,Vtx b,Vtx c){if(n+3<=600){v[n++]=a;v[n++]=b;v[n++]=c;}}
+static void uploadVertices(void){for(int i=0;i<n;i++){positions[i]=(Pos){v[i].x,v[i].y,v[i].z};colors[i]=(Clr){v[i].r,v[i].g,v[i].b,v[i].a};}memcpy(posVbo,positions,n*sizeof(Pos));memcpy(colorVbo,colors,n*sizeof(Clr));}
 static void Q(float x,float y,float w,float h,float z,float r,float g,float b){Vtx a=P(x,y,z,r,g,b),bb=P(x+w,y,z,r,g,b),c=P(x+w,y+h,z,r,g,b),d=P(x,y+h,z,r,g,b);T(a,bb,c);T(a,c,d);}
 static void house(float x,float y,float w,float h,float r,float g,float b){
  Vtx a=P(x+w*.5f,y-h,.45f,r*1.12f,g*1.12f,b*1.12f),bb=P(x+w*.82f,y-h*.72f,.45f,r,g,b),c=P(x+w*.5f,y-h*.44f,.45f,r*.86f,g*.86f,b*.86f),d=P(x+w*.18f,y-h*.72f,.45f,r*1.05f,g*1.05f,b*1.05f);
@@ -88,7 +91,7 @@ int main(void){
  target=C3D_RenderTargetCreate(240,400,GPU_RB_RGBA8,GPU_RB_DEPTH24_STENCIL8); C3D_RenderTargetSetOutput(target,GFX_TOP,GFX_LEFT,XFER);
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
- C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
+ C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);posVbo=linearAlloc(sizeof(positions));colorVbo=linearAlloc(sizeof(colors));city();uploadVertices();C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,posVbo,sizeof(Pos),1,0x0);BufInfo_Add(bi,colorVbo,sizeof(Clr),1,0x1);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
  printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1H3D CAMERA: NEXT UPDATE");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
  while(aptMainLoop()){
   hidScanInput();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
@@ -104,9 +107,9 @@ int main(void){
   city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
   scooter(scooterX,scooterY);car(carX,carY);
   if(!riding)player();
-  memcpy(vbo,v,n*sizeof(Vtx));
+  uploadVertices();
   printf("\x1b[14;1HVEHICLE: %-18s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
  }
- linearFree(vbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();if(audioReady){ndspExit();linearFree(audioData);}gfxExit();return 0;
+ linearFree(posVbo);linearFree(colorVbo);shaderProgramFree(&prog);DVLB_Free(dvlb);C3D_Fini();if(audioReady){ndspExit();linearFree(audioData);}gfxExit();return 0;
 }
