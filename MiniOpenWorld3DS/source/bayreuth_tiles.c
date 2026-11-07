@@ -18,11 +18,9 @@ static uint32_t u32le(const unsigned char *p) {
 
 static int32_t i32le(const unsigned char *p) {
     uint32_t value = u32le(p);
-    int32_t result;
-    /* Avoid relying on an out-of-range unsigned-to-signed conversion. */
+    /* Convert through int64_t so values above INT32_MAX never overflow. */
     if (value <= 0x7fffffffu) return (int32_t)value;
-    result = (int32_t)(value - 0x80000000u);
-    return result + (int32_t)0x80000000u;
+    return (int32_t)((int64_t)value - 4294967296LL);
 }
 
 static float f32le(const unsigned char *p) {
