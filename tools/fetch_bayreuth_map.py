@@ -4,6 +4,7 @@
 This is an offline asset-preparation tool. It never contacts the network at
 game runtime. The output is GeoJSON for later conversion into 3DS map tiles.
 """
+import gzip
 import json
 import math
 import sys
@@ -31,6 +32,13 @@ out body geom;
 """
 
 
+def decode_response(raw, content_encoding=""):
+    """Decode JSON from Overpass, including servers that gzip despite headers."""
+    if raw[:2] == bytes((31, 139)) or content_encoding.lower() == "gzip":
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
+
 def fetch():
     data = urllib.parse.urlencode({"data": QUERY}).encode()
     last_error = None
@@ -49,7 +57,10 @@ def fetch():
             )
             try:
                 with urllib.request.urlopen(request, timeout=150) as response:
-                    payload = json.load(response)
+                    raw = response.read()
+                    payload = decode_response(
+                        raw, response.headers.get("Content-Encoding", "")
+                    )
                 if payload.get("remark"):
                     raise RuntimeError(payload["remark"])
                 return payload
