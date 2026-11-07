@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Fetch the mapped Bayreuth street/building geometry from OpenStreetMap.
+"""Fetch mapped Bayreuth roads and building footprints from OpenStreetMap.
 
-This is an offline asset-preparation tool. It does not contact the network at
-game runtime. Output is GeoJSON so the geometry can be inspected and tiled
-before it is converted to the Nintendo 3DS runtime format.
+This is an offline asset-preparation tool. It never contacts the network at
+game runtime. The output is GeoJSON for later conversion into 3DS map tiles.
 """
 import json
+import math
 import sys
 import time
 import urllib.parse
@@ -18,6 +18,7 @@ ENDPOINTS = [
 QUERY = r"""
 [out:json][timeout:180];
 area["name"="Bayreuth"]["boundary"="administrative"]["admin_level"="8"]->.city;
+.city out tags;
 (
   way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](area.city);
   way["building"](area.city);
@@ -25,13 +26,18 @@ area["name"="Bayreuth"]["boundary"="administrative"]["admin_level"="8"]->.city;
 out body geom;
 """
 
+
 def fetch():
     data = urllib.parse.urlencode({"data": QUERY}).encode()
     last_error = None
     for endpoint in ENDPOINTS:
         request = urllib.request.Request(
-            endpoint, data=data,
-            headers={"User-Agent": "CITY-LIFE-3D map asset builder/1.0"}
+            endpoint,
+            data=data,
+            headers={
+                "User-Agent": "CITY-LIFE-3D map asset builder/1.1 (OSM attribution included)",
+                "Accept": "application/json",
+            },
         )
         try:
             with urllib.request.urlopen(request, timeout=210) as response:
@@ -45,29 +51,80 @@ def fetch():
             time.sleep(2)
     raise RuntimeError(f"All Overpass endpoints failed: {last_error}")
 
-def main():
-    output = sys.argv[1] if len(sys.argv) > 1 else "bayreuth-osm.geojson"
-    payload = fetch()
+
+def valid_point(point):
+    try:
+        lon, lat = float(point["lon"]), float(point["lat"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if not (math.isfinite(lon) and math.isfinite(lat)):
+        return None
+    if not (-180.0 <= lon <= 180.0 and -90.0 <= lat <= 90.0):
+        return None
+    return [lon, lat]
+
+
+def build_features(payload):
+    """Convert Overpass ways to conservative, valid GeoJSON features."""
+    elements = payload.get("elements", [])
+    city_areas = [
+        e for e in elements
+        if e.get("type") == "area"
+        and e.get("tags", {}).get("name") == "Bayreuth"
+        and e.get("tags", {}).get("boundary") == "administrative"
+        and e.get("tags", {}).get("admin_level") == "8"
+    ]
+    if not city_areas:
+        raise RuntimeError(
+            "The Bayreuth administrative area did not resolve on this Overpass "
+            "server. No guessed rectangle will be used."
+        )
+
     features = []
-    for element in payload.get("elements", []):
+    seen = set()
+    for element in elements:
         if element.get("type") != "way" or not element.get("geometry"):
             continue
+        osm_id = element.get("id")
+        if osm_id is None or osm_id in seen:
+            continue
         tags = element.get("tags", {})
-        coords = [[p["lon"], p["lat"]] for p in element["geometry"]]
         is_building = "building" in tags
         is_road = "highway" in tags
-        if not (is_building or is_road) or len(coords) < 2:
+        if not (is_building or is_road):
             continue
-        geometry_type = "Polygon" if is_building and len(coords) >= 4 else "LineString"
-        geometry = [coords] if geometry_type == "Polygon" else coords
-        if geometry_type == "Polygon" and coords[0] != coords[-1]:
-            geometry[0].append(coords[0])
+
+        coords = []
+        for point in element["geometry"]:
+            converted = valid_point(point)
+            if converted is None:
+                coords = []
+                break
+            if not coords or converted != coords[-1]:
+                coords.append(converted)
+        if len(coords) < 2:
+            continue
+
+        if is_building:
+            # Only closed ways are footprints. An open outline must never be
+            # silently closed into a made-up building polygon.
+            if len(coords) < 4 or coords[0] != coords[-1]:
+                continue
+            if len(set(tuple(p) for p in coords[:-1])) < 3:
+                continue
+            geometry = {"type": "Polygon", "coordinates": [coords]}
+            kind = "building"
+        else:
+            geometry = {"type": "LineString", "coordinates": coords}
+            kind = "road"
+
+        seen.add(osm_id)
         features.append({
             "type": "Feature",
-            "id": f"way/{element['id']}",
+            "id": f"way/{osm_id}",
             "properties": {
-                "osm_id": element["id"],
-                "kind": "building" if is_building else "road",
+                "osm_id": osm_id,
+                "kind": kind,
                 "building": tags.get("building"),
                 "highway": tags.get("highway"),
                 "name": tags.get("name"),
@@ -75,25 +132,40 @@ def main():
                 "surface": tags.get("surface"),
                 "width": tags.get("width"),
             },
-            "geometry": {"type": geometry_type, "coordinates": geometry},
+            "geometry": geometry,
         })
+
     if not features:
-        raise RuntimeError("Overpass returned no road/building geometry; refusing to write an empty map.")
+        raise RuntimeError(
+            "Bayreuth resolved, but Overpass returned no valid road/building "
+            "ways. Refusing to write an empty map."
+        )
+    return features, city_areas[0]
+
+
+def main():
+    output = sys.argv[1] if len(sys.argv) > 1 else "bayreuth-osm.geojson"
+    payload = fetch()
+    features, city_area = build_features(payload)
+    roads = sum(f["properties"]["kind"] == "road" for f in features)
+    buildings = len(features) - roads
     document = {
         "type": "FeatureCollection",
         "name": "Bayreuth municipal road and building geometry",
         "source": "© OpenStreetMap contributors",
         "license": "Open Database License (ODbL)",
+        "area_osm_id": city_area.get("id"),
         "osm_timestamp": payload.get("osm3s", {}).get("timestamp_osm_base"),
         "feature_count": len(features),
+        "road_way_count": roads,
+        "building_way_count": buildings,
         "features": features,
     }
     with open(output, "w", encoding="utf-8") as handle:
         json.dump(document, handle, ensure_ascii=False, separators=(",", ":"))
-    roads = sum(f["properties"]["kind"] == "road" for f in features)
-    buildings = len(features) - roads
     print(f"Wrote {output}: {roads} road ways, {buildings} building footprints")
     print(f"OSM data timestamp: {document['osm_timestamp']}")
+
 
 if __name__ == "__main__":
     main()
