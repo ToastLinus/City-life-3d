@@ -11,7 +11,7 @@ SPEC.loader.exec_module(MODULE)
 
 def area():
     return {
-        "type": "area", "id": 3600000001,
+        "type": "relation", "id": 3600000001,
         "tags": {"name": "Bayreuth", "boundary": "administrative", "admin_level": "8"},
     }
 
