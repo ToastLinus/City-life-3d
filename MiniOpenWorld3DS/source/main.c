@@ -51,7 +51,7 @@ int main(void){
  printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HA: Ride / park scooter");printf("\x1b[10;1HSTART: Exit");
  while(aptMainLoop()){
   hidScanInput();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
-  if((down&KEY_A)&&((playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY)<625.0f))riding=!riding;
+  if(down&KEY_A){if(riding){riding=0;scooterX=playerX;scooterY=playerY;}else if((playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY)<625.0f)riding=1;}
   float speed=riding?2.5f:1.6f;
   if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
   if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
