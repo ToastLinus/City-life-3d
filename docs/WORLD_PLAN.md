@@ -77,6 +77,16 @@ CITY LIFE 3D soll mehrere unterschiedliche Orte bieten. Die Welt besteht nicht a
 - Keine kostenpflichtigen Dienste oder Assets.
 - Alle Grafiken und Sounds selbst erstellen oder korrekt lizenzierte freie Inhalte verwenden.
 
-## Status
+## Status und verbindliche Meilensteine
 
-Dies ist der geplante Umfang, noch keine bereits implementierten Spielgebiete. Der aktuelle Programmstand ist weiterhin ein früher 2D-Prototyp.
+Der aktuelle Stand ist ein früher statischer 3D-Szenenprototyp: Er zeichnet eine bunte Stadtansicht, ist aber noch nicht begehbar und enthält noch keine spielbare Figur, Fahrzeugsteuerung, NPCs oder Laden-Interaktionen. Die CIA-Build-Pipeline ist im Repository eingerichtet, ihr erfolgreicher Lauf und ein installierbares CIA-Artefakt für dieses neue Projekt sind noch nicht bestätigt.
+
+### Reihenfolge bis zur ersten spielbaren CIA
+1. Build-Pipeline zuverlässig kompilieren und eine gültige CIA erzeugen.
+2. Spielfigur, Eingabesteuerung, Kollisionsgrenzen und Kamera in einem kleinen Testgebiet implementieren.
+3. Fahrzeug-Prototyp mit Ein-/Aussteigen und einfacher Fahrphysik ergänzen.
+4. Ein begehbares Geschäft mit Regalen, Kaufaktion und einfachem Inventar bauen.
+5. Wenige NPCs mit einfachen Wegpunkten und Dialogen ergänzen.
+6. Erst nach stabilen Tests die weiteren Stadtviertel und auswählbaren Welten ausbauen.
+
+Jeder Meilenstein muss auf echter 3DS-Hardware oder in einem geeigneten Testlauf geprüft werden. Eine erfolgreiche Kompilierung allein bedeutet noch nicht, dass das Spiel auf dem 3DS korrekt läuft.
