@@ -6,7 +6,7 @@
 #include "vshader_shbin.h"
 
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-#define MAX_VERTICES 3000
+#define MAX_VERTICES 5000
 
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 typedef struct { float x,y,z; } Pos;
@@ -28,6 +28,7 @@ static float npcX=-3.0f, npcZ=-1.0f;
 static float npc2X=3.0f, npc2Z=-3.0f;
 static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
+static float trafficCarX=-1.55f, trafficCarZ=-10.0f, trafficCarYaw=3.1415926f;
 static int riding=0;
 static float cameraYaw=0.0f, cameraPitch=0.0f;
 static int touchWasDown=0;
@@ -241,11 +242,20 @@ int main(void) {
         if(riding==1) { scooterX=playerX; scooterZ=playerZ; }
         if(riding==2) { carX=playerX; carZ=playerZ; }
 
+        // Ambient traffic travels along the long main road and loops at the edges.
+        trafficCarZ+=0.035f;
+        if(trafficCarZ>13.0f) trafficCarZ=-13.0f;
+
         buildCity();
         person(npcX,npcZ,.88f,.46f,.20f);
         person(npc2X,npc2Z,.66f,.30f,.76f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         vehicle(carX,carZ,.86f,.25f,.18f);
+        // Draw an independent traffic car without changing the player's car state.
+        float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
+        carX=trafficCarX; carZ=trafficCarZ; carYaw=trafficCarYaw;
+        vehicle(trafficCarX,trafficCarZ,.72f,.62f,.18f);
+        carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         if(!riding) person(playerX,playerZ,.12f,.40f,.92f);
         uploadVertices();
 
