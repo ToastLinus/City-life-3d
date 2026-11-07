@@ -140,8 +140,19 @@ static void vehicle(float x,float z,float r,float g,float b) {
         carBox(x,.10f,z,1.78f,.48f,2.65f,r,g,b);
         carBox(x,.57f,z-.12f,1.48f,.68f,1.48f,r*.78f,g*.78f,b*.78f);
         carBox(x,.63f,z-.12f,1.50f,.38f,1.49f,.18f,.43f,.58f);
-        carBox(x,.25f,z-1.18f,1.42f,.12f,.22f,.92f,.88f,.62f);
-        carBox(x,.25f,z+1.18f,1.42f,.12f,.22f,.86f,.12f,.10f);
+        /* The car's FRONT is always local -Z: bright headlights and a grille. */
+        carBox(x,.24f,z-1.31f,1.55f,.16f,.20f,.12f,.13f,.15f);
+        carBox(x,.27f,z-1.37f,.38f,.18f,.10f,1.00f,.96f,.70f);
+        carBox(x,.27f,z-1.37f,.12f,.20f,.12f,1.00f,1.00f,.92f);
+        carBox(x,.27f,z-1.34f,.16f,.10f,.08f,1.00f,.66f,.12f);
+        carBox(x,.23f,z+1.31f,1.55f,.16f,.20f,.12f,.10f,.11f);
+        carBox(x,.28f,z+1.37f,.38f,.19f,.10f,1.00f,.035f,.025f);
+        carBox(x,.28f,z+1.37f,.12f,.20f,.12f,.72f,.015f,.02f);
+        /* Front bumper and lower grille make the driving direction unmistakable. */
+        carBox(x,.12f,z-1.40f,1.72f,.12f,.12f,.34f,.36f,.39f);
+        carBox(x,.34f,z-1.405f,.62f,.12f,.035f,.025f,.035f,.045f);
+        /* A broad, blue-tinted windscreen sits behind the front edge. */
+        carBox(x,.83f,z-.83f,1.30f,.34f,.055f,.30f,.67f,.82f);
         objectCenterX=x; objectCenterZ=z; objectYaw=carYaw;
         wheel(x-.91f,.25f,z-.82f,.34f,.20f);
         wheel(x+.91f,.25f,z-.82f,.34f,.20f);
@@ -259,9 +270,9 @@ int main(void) {
             /* Steering direction corrected to match the player's left/right input. */
             if(keys&KEY_LEFT) carYaw-=carVelocity*.10f;
             if(keys&KEY_RIGHT) carYaw+=carVelocity*.10f;
-            playerX-=sinf(carYaw)*carVelocity;
-            /* The tested build moved opposite to the forward control; correct its axis. */
-            playerZ+=cosf(carYaw)*carVelocity;
+            /* The visible front of the car is local -Z, so UP moves along -Z. */
+            playerX+=sinf(carYaw)*carVelocity;
+            playerZ-=cosf(carYaw)*carVelocity;
         } else {
             /* Walk relative to the camera: UP always means toward the view direction. */
             float forwardX=-sinf(cameraYaw), forwardZ=-cosf(cameraYaw);
@@ -316,11 +327,12 @@ int main(void) {
         uploadVertices();
 
         C3D_FVec eye, look;
+        float viewYaw=(riding==2 && firstPerson)?carYaw:cameraYaw;
         if(firstPerson) {
             eye=FVec3_New(playerX,1.48f,playerZ);
-            look=FVec3_New(playerX-sinf(cameraYaw)*10.0f,
+            look=FVec3_New(playerX-sinf(viewYaw)*10.0f,
                            1.48f+(cameraPitch-1.5f)*0.45f,
-                           playerZ-cosf(cameraYaw)*10.0f);
+                           playerZ-cosf(viewYaw)*10.0f);
         } else {
             eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
             look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,0.7f,playerZ-cosf(cameraYaw)*1.0f);
