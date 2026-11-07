@@ -189,10 +189,10 @@ static void scooterBox(float x,float y,float z,float w,float h,float d,
     for(int i=start;i<vertexCount;i++)
         transformPoint(&vertices[i].x,&vertices[i].z);
 }
-static void scooterAt(float x,float z,float yaw) {
+static void scooterAt(float x,float z,float yaw,int trick) {
     objectCenterX=x; objectCenterZ=z; objectYaw=yaw;
     /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
-    float frontLift=scooterTrick?.34f:0.0f;
+    float frontLift=trick?.34f:0.0f;
     wheel(x,.23f+frontLift,z-.62f,.23f,.13f);
     wheel(x,.23f,z+.62f,.23f,.13f);
     scooterBox(x,.38f+frontLift*.35f,z-.20f,.24f,.10f,.52f,.16f,.18f,.20f);
@@ -204,7 +204,7 @@ static void scooterAt(float x,float z,float yaw) {
     objectYaw=0.0f;
 }
 static void scooter(float x,float z) {
-    scooterAt(x,z,scooterYaw);
+    scooterAt(x,z,scooterYaw,scooterTrick);
 }
 static void scooterRider(float x,float z,float yaw) {
     objectCenterX=x; objectCenterZ=z; objectYaw=yaw;
@@ -508,7 +508,7 @@ int main(void) {
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
         /* Independent traffic scooter: it has its own position and heading. */
-        scooterAt(trafficScooterX,trafficScooterZ,0.0f);
+        scooterAt(trafficScooterX,trafficScooterZ,0.0f,0);
         scooterRider(trafficScooterX,trafficScooterZ,0.0f);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
