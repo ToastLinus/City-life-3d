@@ -29,7 +29,7 @@ static float playerX=0.0f, playerZ=0.0f;
 static float npcX[NPC_COUNT]={-3.35f,-3.35f,-3.35f,3.35f,3.35f,3.35f};
 static float npcZ[NPC_COUNT]={-8.0f,-2.5f,5.0f,8.0f,2.5f,-5.0f};
 static float npcDirection[NPC_COUNT]={1.0f,1.0f,1.0f,-1.0f,-1.0f,-1.0f};
-static float npcSpeed[NPC_COUNT]={.035f,.031f,.038f,.033f,.036f,.030f};
+static float npcSpeed[NPC_COUNT]={.070f,.064f,.076f,.068f,.073f,.062f};
 static float npcWalkPhase[NPC_COUNT]={0,1,2,3,4,5};
 static float playerYaw=0.0f, playerJump=0.0f, playerJumpVelocity=0.0f;
 static float carX=2.5f, carZ=2.0f;
@@ -298,7 +298,7 @@ int main(void) {
         u32 keys=hidKeysHeld(), down=hidKeysDown();
         if(down&KEY_START) break;
         if(down&KEY_X) firstPerson=!firstPerson;
-        if(down&KEY_B && riding==0 && playerJump<=0.001f) playerJumpVelocity=.16f;
+        if(down&KEY_B && riding==0 && playerJump<=0.001f) playerJumpVelocity=.24f;
         if(riding!=0) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         scooterTrick=(riding==1 && (keys&KEY_Y))?1:0;
         if(down&KEY_A) {
@@ -393,7 +393,7 @@ int main(void) {
         }
         if(riding==0 && playerJumpVelocity!=0.0f) {
             playerJump+=playerJumpVelocity;
-            playerJumpVelocity-=.012f;
+            playerJumpVelocity-=.018f;
             if(playerJump<=0.0f) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         }
 
