@@ -4,10 +4,10 @@
 #include "vshader_shbin.h"
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
-static Vtx v[180]; static int n=0; static void* vbo;
+static Vtx v[600]; static int n=0; static void* vbo;
 static DVLB_s* dvlb; static shaderProgram_s prog; static int loc; static C3D_Mtx proj; static C3D_RenderTarget* target;
 static Vtx P(float x,float y,float z,float r,float g,float b){return (Vtx){x,y,z,r,g,b,1};}
-static void T(Vtx a,Vtx b,Vtx c){if(n+3<=180){v[n++]=a;v[n++]=b;v[n++]=c;}}
+static void T(Vtx a,Vtx b,Vtx c){if(n+3<=600){v[n++]=a;v[n++]=b;v[n++]=c;}}
 static void Q(float x,float y,float w,float h,float z,float r,float g,float b){Vtx a=P(x,y,z,r,g,b),bb=P(x+w,y,z,r,g,b),c=P(x+w,y+h,z,r,g,b),d=P(x,y+h,z,r,g,b);T(a,bb,c);T(a,c,d);}
 static void house(float x,float y,float w,float h,float r,float g,float b){
  Vtx a=P(x+w*.5f,y-h,.45f,r*1.12f,g*1.12f,b*1.12f),bb=P(x+w*.82f,y-h*.72f,.45f,r,g,b),c=P(x+w*.5f,y-h*.44f,.45f,r*.86f,g*.86f,b*.86f),d=P(x+w*.18f,y-h*.72f,.45f,r*1.05f,g*1.05f,b*1.05f);
