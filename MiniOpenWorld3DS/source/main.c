@@ -8,7 +8,6 @@
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 static Vtx v[600]; static int n=0; static void* vbo;
 static DVLB_s* dvlb; static shaderProgram_s prog; static int loc; static C3D_Mtx proj; static C3D_RenderTarget* target;
-static float camYaw=0.0f, camPitch=0.0f;
 #define AUDIO_RATE 22050
 #define AUDIO_SAMPLES (AUDIO_RATE/30)
 static u32* audioData=NULL; static ndspWaveBuf audioBuf[2]; static bool audioReady=false; static size_t audioOffset=0; static int audioBlock=0;
@@ -54,18 +53,6 @@ static void car(float x,float y){
 }
 static void player(void){ person(playerX,playerY,.12f,.42f,.92f); }
 
-static void cameraTouch(void){
- static bool wasTouch=false; static int lastX=0,lastY=0;
- if(hidKeysHeld() & KEY_TOUCH){
-  touchPosition t; hidTouchRead(&t);
-  if(wasTouch){camYaw+=(float)(t.px-lastX)*0.012f;camPitch+=(float)(t.py-lastY)*0.009f;if(camPitch>0.75f)camPitch=0.75f;if(camPitch< -0.75f)camPitch=-0.75f;}
-  lastX=t.px;lastY=t.py;wasTouch=true;
- }else wasTouch=false;
-}
-static void turnScene(void){
- float cs=cosf(camYaw),sn=sinf(camYaw),tilt=cosf(camPitch);
- for(int i=0;i<n;i++){float x=v[i].x-playerX,y=v[i].y-playerY;v[i].x=playerX+x*cs-y*sn;v[i].y=playerY+(x*sn+y*cs)*tilt;}
-}
 static void fillAudio(void* dst,size_t offset,size_t count){
  u32* out=(u32*)dst; static const int notes[]={330,392,440,392,294,349,392,349};
  for(size_t i=0;i<count;i++){float t=(float)(offset+i)/(float)AUDIO_RATE;int note=notes[((offset+i)/(AUDIO_SAMPLES*2))%8];s16 sample=(s16)(3000.0f*sinf(t*6.2831853f*(float)note));out[i]=((u32)(u16)sample<<16)|(u16)sample;}
@@ -101,10 +88,10 @@ int main(void){
  target=C3D_RenderTargetCreate(240,400,GPU_RB_RGBA8,GPU_RB_DEPTH24_STENCIL8); C3D_RenderTargetSetOutput(target,GFX_TOP,GFX_LEFT,XFER);
  dvlb=DVLB_ParseFile((u32*)vshader_shbin,vshader_shbin_size); shaderProgramInit(&prog); shaderProgramSetVsh(&prog,&dvlb->DVLE[0]); C3D_BindProgram(&prog); loc=shaderInstanceGetUniformLocation(prog.vertexShader,"projection");
  C3D_AttrInfo* ai=C3D_GetAttrInfo();AttrInfo_Init(ai);AttrInfo_AddLoader(ai,0,GPU_FLOAT,3);AttrInfo_AddLoader(ai,1,GPU_FLOAT,4);
- C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();turnScene();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,0,400,0,240,0,1,true);
- printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1HSTYLUS  Drag to look around");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
+ C3D_TexEnv* env=C3D_GetTexEnv(0);C3D_TexEnvInit(env);C3D_TexEnvSrc(env,C3D_Both,GPU_PRIMARY_COLOR,0,0);C3D_TexEnvFunc(env,C3D_Both,GPU_REPLACE);vbo=linearAlloc(sizeof(v));city();memcpy(vbo,v,n*sizeof(Vtx));C3D_BufInfo* bi=C3D_GetBufInfo();BufInfo_Init(bi);BufInfo_Add(bi,vbo,sizeof(Vtx),2,0x10);Mtx_OrthoTilt(&proj,400,0,240,0,0,1,true);
+ printf("\x1b[1;1H+--------------------------------+");printf("\x1b[2;1H|          CITY LIFE 3D          |");printf("\x1b[3;1H+--------------------------------+");printf("\x1b[5;1HWORLD: BAYREUTH");printf("\x1b[7;1HDPAD  Move / drive");printf("\x1b[8;1HA     Enter / leave vehicle");printf("\x1b[9;1H3D CAMERA: NEXT UPDATE");printf("\x1b[11;1HSTART  Exit game");printf("\x1b[13;1H-------------------------------");
  while(aptMainLoop()){
-  hidScanInput();cameraTouch();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
+  hidScanInput();updateAudio();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
   if(down&KEY_A){if(riding==1){riding=0;scooterX=playerX;scooterY=playerY;}else if(riding==2){riding=0;carX=playerX;carY=playerY;}else{float ds=(playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY);float dc=(playerX-carX)*(playerX-carX)+(playerY-carY)*(playerY-carY);if(ds<dc&&ds<625.0f)riding=1;else if(dc<625.0f)riding=2;}}
   float speed=riding==2?3.2f:(riding==1?2.5f:1.6f);
   if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
@@ -117,7 +104,6 @@ int main(void){
   city();person(npcX,178.0f,.88f,.48f,.22f);person(npc2X,205.0f,.68f,.30f,.76f);
   scooter(scooterX,scooterY);car(carX,carY);
   if(!riding)player();
-  turnScene();
   memcpy(vbo,v,n*sizeof(Vtx));
   printf("\x1b[14;1HVEHICLE: %-18s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
   C3D_FrameBegin(C3D_FRAME_SYNCDRAW);C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);C3D_FrameDrawOn(target);C3D_FVUnifMtx4x4(GPU_VERTEX_SHADER,loc,&proj);C3D_DrawArrays(GPU_TRIANGLES,0,n);C3D_FrameEnd(0);
