@@ -17,8 +17,10 @@ static void house(float x,float y,float w,float h,float r,float g,float b){
 }
 static float playerX=200.0f, playerY=184.0f;
 static float scooterX=244.0f, scooterY=184.0f;
+static float carX=145.0f, carY=184.0f;
 static float npcX=78.0f;
-static int riding=0, npcDirection=1, frameCount=0;
+/* riding: 0 = on foot, 1 = scooter, 2 = car */
+static int riding=0, npcDirection=1;
 static void person(float x,float y,float shirtR,float shirtG,float shirtB){
  Q(x-4.0f,y-3.0f,8.0f,12.0f,.18f,shirtR,shirtG,shirtB);
  T(P(x-4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x+4.0f,y-3.0f,.17f,shirtR,shirtG,shirtB),P(x,y-11.0f,.17f,shirtR,shirtG,shirtB));
@@ -32,6 +34,17 @@ static void scooter(float x,float y){
  Q(x+5.0f,y-12.0f,3.0f,9.0f,.19f,.15f,.72f,.88f);
  Q(x+4.0f,y-13.0f,7.0f,2.0f,.18f,.18f,.18f,.2f);
  Q(x-2.0f,y-8.0f,6.0f,3.0f,.17f,.96f,.78f,.32f);
+}
+static void car(float x,float y){
+ /* Original compact city car, built from simple low-poly blocks. */
+ Q(x-15.0f,y+2.0f,8.0f,6.0f,.24f,.10f,.11f,.14f);
+ Q(x+8.0f,y+2.0f,8.0f,6.0f,.24f,.10f,.11f,.14f);
+ Q(x-17.0f,y-5.0f,34.0f,9.0f,.21f,.88f,.28f,.20f);
+ Q(x-9.0f,y-12.0f,19.0f,8.0f,.20f,.95f,.43f,.25f);
+ Q(x-6.0f,y-11.0f,7.0f,6.0f,.19f,.42f,.78f,.90f);
+ Q(x+2.0f,y-11.0f,6.0f,6.0f,.19f,.42f,.78f,.90f);
+ Q(x-16.0f,y-3.0f,4.0f,3.0f,.18f,1.0f,.88f,.42f);
+ Q(x+12.0f,y-3.0f,4.0f,3.0f,.18f,1.0f,.88f,.42f);
 }
 static void player(void){ person(playerX,playerY,.12f,.42f,.92f); }
 static void city(void){
@@ -51,16 +64,16 @@ int main(void){
  printf("\x1b[1;1HCITY LIFE 3D");printf("\x1b[3;1HFirst 3D city scene");printf("\x1b[5;1HColorful low-poly prototype");printf("\x1b[7;1HD-Pad: Move");printf("\x1b[8;1HA: Ride / park scooter");printf("\x1b[10;1HSTART: Exit");
  while(aptMainLoop()){
   hidScanInput();u32 keys=hidKeysHeld();u32 down=hidKeysDown();if(down&KEY_START)break;
-  if(down&KEY_A){if(riding){riding=0;scooterX=playerX;scooterY=playerY;}else if((playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY)<625.0f)riding=1;}
-  float speed=riding?2.5f:1.6f;
+  if(down&KEY_A){if(riding==1){riding=0;scooterX=playerX;scooterY=playerY;}else if(riding==2){riding=0;carX=playerX;carY=playerY;}else{float ds=(playerX-scooterX)*(playerX-scooterX)+(playerY-scooterY)*(playerY-scooterY);float dc=(playerX-carX)*(playerX-carX)+(playerY-carY)*(playerY-carY);if(ds<dc&&ds<625.0f)riding=1;else if(dc<625.0f)riding=2;}}
+  float speed=riding==2?3.2f:(riding==1?2.5f:1.6f);
   if(keys&KEY_LEFT)playerX-=speed;if(keys&KEY_RIGHT)playerX+=speed;
   if(keys&KEY_UP)playerY-=speed;if(keys&KEY_DOWN)playerY+=speed;
   if(playerX<8.0f)playerX=8.0f;if(playerX>392.0f)playerX=392.0f;
   if(playerY<18.0f)playerY=18.0f;if(playerY>232.0f)playerY=232.0f;
   if(!riding){npcX+=0.22f*npcDirection;if(npcX>142.0f)npcDirection=-1;if(npcX<76.0f)npcDirection=1;}
-  frameCount++;
+  if(riding==1){scooterX=playerX;scooterY=playerY;}else if(riding==2){carX=playerX;carY=playerY;}
   city();person(npcX,178.0f,.88f,.48f,.22f);
-  if(riding)scooter(playerX,playerY);else scooter(scooterX,scooterY);
+  scooter(scooterX,scooterY);car(carX,carY);
   if(!riding)player();
   memcpy(vbo,v,n*sizeof(Vtx));
   printf("\x1b[12;1H%s",riding?"Scooter: ON  A: Park":"Scooter: OFF  Find blue scooter");
