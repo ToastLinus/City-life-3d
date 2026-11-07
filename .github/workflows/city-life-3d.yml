@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'MiniOpenWorld3DS/**'
+      - 'tools/**'
       - '.github/workflows/city-life-3d.yml'
   workflow_dispatch:
 
@@ -52,12 +53,17 @@ jobs:
           open('MiniOpenWorld3DS/icon.png', 'wb').write(png)
           PY
 
+      - name: Install terrain converter dependency
+        run: python3 -m pip install --user rasterio
+
       - name: Fetch and prepare Bayreuth map
         run: |
           python3 tools/fetch_bayreuth_map.py bayreuth-osm.geojson
           python3 tools/build_bayreuth_tiles.py bayreuth-osm.geojson bayreuth-tiles.bin
+          python3 tools/fetch_bayreuth_dem.py bayreuth-osm.geojson bayreuth-dem.bin
           mkdir -p MiniOpenWorld3DS/romfs
           cp bayreuth-tiles.bin MiniOpenWorld3DS/romfs/bayreuth-tiles.bin
+          cp bayreuth-dem.bin MiniOpenWorld3DS/romfs/bayreuth-dem.bin
 
       - name: Build 3DSX
         run: make -C MiniOpenWorld3DS
