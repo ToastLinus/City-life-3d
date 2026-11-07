@@ -1,0 +1,17 @@
+BasicInfo:
+  Title: "CITY LIFE 3D"
+  CompanyCode: "00"
+  ProductCode: "CL3D"
+  ContentType: Application
+  Logo: Homebrew
+
+TitleInfo:
+  UniqueId: 0xF00BD
+  Category: Application
+
+Option:
+  UseOnSD: true
+  FreeProductCode: true
+  EnableCrypt: false
+  EnableCompress: true
+  MediaFootPadding: false
