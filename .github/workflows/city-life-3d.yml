@@ -71,9 +71,13 @@ jobs:
             MiniOpenWorld3DS/MiniOpenWorld3DS.3dsx
             MiniOpenWorld3DS/MiniOpenWorld3DS.elf
             MiniOpenWorld3DS/MiniOpenWorld3DS.smdh
+            MiniOpenWorld3DS/romfs/**
 
   package:
     runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm
+      options: --user 1001
     needs: build
     steps:
       - name: Checkout
@@ -91,10 +95,13 @@ jobs:
           MAKEROM="$(find /tmp/makerom -type f -name makerom | head -n 1)"
           test -n "$MAKEROM"
           chmod +x "$MAKEROM"
+      - name: Build RomFS image
+        run: 3dstool -cvtf romfs MiniOpenWorld3DS/romfs.bin --romfs-dir MiniOpenWorld3DS/romfs
+
       - name: Package CIA
         run: |
           MAKEROM="$(find /tmp/makerom -type f -name makerom | head -n 1)"
-          "$MAKEROM" -f cia -o CITY-LIFE-3D.cia -target t -elf MiniOpenWorld3DS/MiniOpenWorld3DS.elf -romfs MiniOpenWorld3DS/romfs -rsf MiniOpenWorld3DS/cia.rsf -icon MiniOpenWorld3DS/MiniOpenWorld3DS.smdh -desc app:4 -exefslogo
+          "$MAKEROM" -f cia -o CITY-LIFE-3D.cia -target t -elf MiniOpenWorld3DS/MiniOpenWorld3DS.elf -romfs MiniOpenWorld3DS/romfs.bin -rsf MiniOpenWorld3DS/cia.rsf -icon MiniOpenWorld3DS/MiniOpenWorld3DS.smdh -desc app:4 -exefslogo
           test -s CITY-LIFE-3D.cia
       - name: Upload installable files
         uses: actions/upload-artifact@v4
