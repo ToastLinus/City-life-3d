@@ -30,6 +30,8 @@ static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
 static float trafficCarX=-1.55f, trafficCarZ=-10.0f, trafficCarYaw=3.1415926f;
 static int riding=0;
+static int firstPerson=0;
+static int scooterTrick=0;
 static float cameraYaw=0.0f, cameraPitch=0.0f;
 static int touchWasDown=0;
 static touchPosition previousTouch;
@@ -114,13 +116,15 @@ static void scooterBox(float x,float y,float z,float w,float h,float d,
 static void scooter(float x,float z) {
     objectCenterX=x; objectCenterZ=z; objectYaw=scooterYaw;
     /* Two proper wheels, a narrow footboard, steering stem and handlebars. */
-    wheel(x,.23f,z-.62f,.23f,.13f);
+    float frontLift=scooterTrick?.34f:0.0f;
+    wheel(x,.23f+frontLift,z-.62f,.23f,.13f);
     wheel(x,.23f,z+.62f,.23f,.13f);
-    scooterBox(x,.38f,z,.24f,.10f,.88f,.16f,.18f,.20f);
-    scooterBox(x,.43f,z-.48f,.12f,.10f,.18f,.25f,.28f,.30f);
-    scooterBox(x,.70f,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
-    scooterBox(x,.99f,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
-    scooterBox(x,.94f,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
+    scooterBox(x,.38f+frontLift*.35f,z-.20f,.24f,.10f,.52f,.16f,.18f,.20f);
+    scooterBox(x,.38f,z+.28f,.24f,.10f,.38f,.16f,.18f,.20f);
+    scooterBox(x,.43f+frontLift,z-.48f,.12f,.10f,.18f,.25f,.28f,.30f);
+    scooterBox(x,.70f+frontLift,z-.55f,.075f,.68f,.075f,.72f,.75f,.78f);
+    scooterBox(x,.99f+frontLift,z-.55f,.62f,.075f,.09f,.12f,.14f,.16f);
+    scooterBox(x,.94f+frontLift,z-.55f,.12f,.12f,.12f,.10f,.11f,.12f);
     objectYaw=0.0f;
 }
 static void carBox(float x,float y,float z,float w,float h,float d,float r,float g,float b) {
@@ -217,6 +221,8 @@ int main(void) {
         hidScanInput();
         u32 keys=hidKeysHeld(), down=hidKeysDown();
         if(down&KEY_START) break;
+        if(down&KEY_X) firstPerson=!firstPerson;
+        scooterTrick=(riding==1 && (keys&KEY_Y))?1:0;
         if(down&KEY_A) {
             if(riding) riding=0;
             else {
@@ -307,13 +313,23 @@ int main(void) {
         if(!riding) person(playerX,playerZ,.12f,.40f,.92f);
         uploadVertices();
 
-        C3D_FVec eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
-        C3D_FVec look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,0.7f,playerZ-cosf(cameraYaw)*1.0f);
+        C3D_FVec eye, look;
+        if(firstPerson) {
+            eye=FVec3_New(playerX,1.48f,playerZ);
+            look=FVec3_New(playerX-sinf(cameraYaw)*10.0f,
+                           1.48f+(cameraPitch-1.5f)*0.45f,
+                           playerZ-cosf(cameraYaw)*10.0f);
+        } else {
+            eye=FVec3_New(playerX+sinf(cameraYaw)*8.5f,5.0f+cameraPitch,playerZ+cosf(cameraYaw)*8.5f);
+            look=FVec3_New(playerX-sinf(cameraYaw)*1.0f,0.7f,playerZ-cosf(cameraYaw)*1.0f);
+        }
         C3D_FVec up=FVec3_New(0.0f,1.0f,0.0f);
         Mtx_LookAt(&view,eye,look,up,true);
         Mtx_Multiply(&viewProjection,&projection,&view);
 
-        printf("\x1b[12;1HVEHICLE: %-12s",riding==1?"SCOOTER":(riding==2?"CITY CAR":"ON FOOT"));
+        printf("\x1b[12;1H%-12s %s",riding==1?"E-SCOOTER":(riding==2?"CITY CAR":"ON FOOT"),
+               firstPerson?"FIRST PERSON":"THIRD PERSON");
+        printf("\x1b[13;1HX: CAMERA  Y: SCOOTER TRICK");
         C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
         C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);
         C3D_FrameDrawOn(target);
