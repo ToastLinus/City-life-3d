@@ -286,6 +286,10 @@ static void buildCity(void) {
     box(0.0f,-.18f,0.0f,30.0f,.25f,30.0f,.26f,.58f,.29f);
     box(0.0f,-.025f,0.0f,5.0f,.035f,30.0f,.20f,.21f,.24f);
     for(int z=-12;z<=12;z+=4) box(0.0f,.0f,(float)z, .12f,.012f,1.5f,.94f,.82f,.48f);
+    /* A zebra crossing and short stop line make the street read as a real road. */
+    for(int i=0;i<7;i++)
+        box(-1.8f+(float)i*.60f,.018f,-2.2f,.34f,.025f,.95f,.92f,.93f,.88f);
+    box(0.0f,.018f, -3.05f,4.5f,.025f,.10f,.95f,.88f,.62f);
     house(-5.0f,-5.0f,3.0f,2.8f,3.0f,.82f,.48f,.28f);
     house(-5.0f,1.0f,3.4f,3.6f,3.0f,.50f,.67f,.83f);
     house(5.0f,-6.0f,3.2f,3.0f,3.0f,.78f,.56f,.34f);
@@ -305,6 +309,14 @@ static void buildCity(void) {
         box(-4.65f,2.55f,(float)z,.42f,.18f,.42f,.96f,.82f,.42f);
         box(4.65f,.0f,(float)z,.10f,2.65f,.10f,.24f,.25f,.27f);
         box(4.65f,2.55f,(float)z,.42f,.18f,.42f,.96f,.82f,.42f);
+    }
+    /* Benches on the pavement: dark legs and warm wooden seats. */
+    for(int side=-1;side<=1;side+=2) {
+        float bx=(float)side*4.05f;
+        box(bx,.28f,-4.0f,1.05f,.12f,.34f,.48f,.27f,.13f);
+        box(bx-.38f,.05f,-4.0f,.08f,.30f,.08f,.20f,.21f,.22f);
+        box(bx+.38f,.05f,-4.0f,.08f,.30f,.08f,.20f,.21f,.22f);
+        box(bx,.55f,-4.16f,1.05f,.42f,.09f,.48f,.27f,.13f);
     }
     /* Side-street shopfront details and flower planters. */
     box(-5.0f,1.05f,2.58f,1.15f,.34f,.08f,.88f,.76f,.28f);
