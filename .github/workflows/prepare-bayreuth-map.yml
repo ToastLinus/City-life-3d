@@ -2,6 +2,11 @@ name: Prepare real Bayreuth map data
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'tools/fetch_bayreuth_map.py'
+      - 'tools/build_bayreuth_tiles.py'
+      - '.github/workflows/prepare-bayreuth-map.yml'
 
 permissions:
   contents: read
