@@ -69,13 +69,59 @@ static void person(float x,float z,float r,float g,float b) {
     box(x,.0f,z,.48f,1.0f,.38f,r,g,b);
     box(x,1.05f,z,.34f,.34f,.34f,.92f,.69f,.48f);
 }
+static float carYaw=0.0f, carVelocity=0.0f;
+static float objectYaw=0.0f, objectCenterX=0.0f, objectCenterZ=0.0f;
+static void transformPoint(float *x,float *z) {
+    float dx=*x-objectCenterX, dz=*z-objectCenterZ;
+    float c=cosf(objectYaw), s=sinf(objectYaw);
+    *x=objectCenterX+dx*c-dz*s;
+    *z=objectCenterZ+dx*s+dz*c;
+}
+static void wheel(float x,float y,float z,float radius,float width) {
+    const int sides=10;
+    for(int i=0;i<sides;i++) {
+        float a=(float)i*6.2831853f/(float)sides;
+        float b=(float)(i+1)*6.2831853f/(float)sides;
+        float y1=y+cosf(a)*radius, z1=z+sinf(a)*radius;
+        float y2=y+cosf(b)*radius, z2=z+sinf(b)*radius;
+        float x0=x-width*.5f, x1=x+width*.5f;
+        float ax=x0, az=z1, bx=x0, bz=z2, cx=x1, cz=z2, dx=x1, dz=z1;
+        transformPoint(&ax,&az); transformPoint(&bx,&bz);
+        transformPoint(&cx,&cz); transformPoint(&dx,&dz);
+        quad(V(ax,y1,az,.055f,.06f,.07f),V(bx,y2,bz,.055f,.06f,.07f),V(cx,y2,cz,.055f,.06f,.07f),V(dx,y1,dz,.055f,.06f,.07f));
+    }
+    // Simple metallic wheel hubs.
+    box(x,y,z,width*1.08f,radius*.72f,radius*.72f,.48f,.50f,.54f);
+}
+static void carBox(float x,float y,float z,float w,float h,float d,float r,float g,float b) {
+    objectCenterX=carX; objectCenterZ=carZ;
+    objectYaw=carYaw;
+    int start=vertexCount;
+    box(x,y,z,w,h,d,r,g,b);
+    for(int i=start;i<vertexCount;i++) transformPoint(&vertices[i].x,&vertices[i].z);
+    objectYaw=0.0f;
+}
 static void vehicle(float x,float z,float r,float g,float b) {
-    box(x,.12f,z,1.45f,.48f,.82f,r,g,b);
-    box(x,.60f,z-.04f,.78f,.42f,.68f,r*.8f,g*.8f,b*.8f);
-    box(x-.48f,.0f,z-.34f,.28f,.28f,.12f,.08f,.08f,.09f);
-    box(x+.48f,.0f,z-.34f,.28f,.28f,.12f,.08f,.08f,.09f);
-    box(x-.48f,.0f,z+.34f,.28f,.28f,.12f,.08f,.08f,.09f);
-    box(x+.48f,.0f,z+.34f,.28f,.28f,.12f,.08f,.08f,.09f);
+    if(r>.5f) {
+        carBox(x,.10f,z,1.78f,.48f,2.65f,r,g,b);
+        carBox(x,.57f,z-.12f,1.48f,.68f,1.48f,r*.78f,g*.78f,b*.78f);
+        carBox(x,.63f,z-.12f,1.50f,.38f,1.49f,.18f,.43f,.58f);
+        carBox(x,.25f,z-1.18f,1.42f,.12f,.22f,.92f,.88f,.62f);
+        carBox(x,.25f,z+1.18f,1.42f,.12f,.22f,.86f,.12f,.10f);
+        objectCenterX=x; objectCenterZ=z; objectYaw=carYaw;
+        wheel(x-.91f,.25f,z-.82f,.34f,.20f);
+        wheel(x+.91f,.25f,z-.82f,.34f,.20f);
+        wheel(x-.91f,.25f,z+.82f,.34f,.20f);
+        wheel(x+.91f,.25f,z+.82f,.34f,.20f);
+        objectYaw=0.0f;
+    } else {
+        box(x,.12f,z,1.0f,.25f,.35f,r,g,b);
+        box(x,.37f,z,.28f,.32f,.30f,r*.75f,g*.75f,b*.75f);
+        box(x-.34f,.0f,z-.12f,.18f,.18f,.10f,.07f,.07f,.08f);
+        box(x+.34f,.0f,z-.12f,.18f,.18f,.10f,.07f,.07f,.08f);
+        box(x-.34f,.0f,z+.12f,.18f,.18f,.10f,.07f,.07f,.08f);
+        box(x+.34f,.0f,z+.12f,.18f,.18f,.10f,.07f,.07f,.08f);
+    }
 }
 static void buildCity(void) {
     vertexCount=0;
@@ -137,8 +183,9 @@ int main(void) {
     printf("\x1b[2;1H|          CITY LIFE 3D          |");
     printf("\x1b[3;1H+--------------------------------+");
     printf("\x1b[5;1H3D TEST WORLD");
-    printf("\x1b[7;1HD-PAD: Move around");
+    printf("\x1b[7;1HD-PAD: Move / steer");
     printf("\x1b[8;1HA: Enter / leave vehicle");
+    printf("\x1b[9;1HCar: UP gas / DOWN brake");
     printf("\x1b[10;1HSTART: Exit");
 
     while(aptMainLoop()) {
@@ -170,15 +217,27 @@ int main(void) {
             touchWasDown=0;
         }
         float speed=riding==2?.13f:(riding==1?.105f:.075f);
-        // Left/right were reversed on the first test build; correct their direction.
-        if(keys&KEY_LEFT) playerX+=speed;
-        if(keys&KEY_RIGHT) playerX-=speed;
-        if(keys&KEY_UP) playerZ-=speed;
-        if(keys&KEY_DOWN) playerZ+=speed;
-        if(playerX < -12.0f) playerX=-12.0f;
-        if(playerX > 12.0f) playerX=12.0f;
-        if(playerZ < -12.0f) playerZ=-12.0f;
-        if(playerZ > 12.0f) playerZ=12.0f;
+        if(riding==2) {
+            if(keys&KEY_UP) carVelocity+=.006f;
+            if(keys&KEY_DOWN) carVelocity-=.008f;
+            if(carVelocity>.22f) carVelocity=.22f;
+            if(carVelocity<-.10f) carVelocity=-.10f;
+            if(!(keys&(KEY_UP|KEY_DOWN))) carVelocity*=.96f;
+            if(fabsf(carVelocity)<.001f) carVelocity=0.0f;
+            if(keys&KEY_LEFT) carYaw-=carVelocity*.10f;
+            if(keys&KEY_RIGHT) carYaw+=carVelocity*.10f;
+            playerX+=sinf(carYaw)*carVelocity;
+            playerZ-=cosf(carYaw)*carVelocity;
+        } else {
+            if(keys&KEY_LEFT) playerX+=speed;
+            if(keys&KEY_RIGHT) playerX-=speed;
+            if(keys&KEY_UP) playerZ-=speed;
+            if(keys&KEY_DOWN) playerZ+=speed;
+        }
+        if(playerX < -12.0f) { playerX=-12.0f; carVelocity=0.0f; }
+        if(playerX > 12.0f) { playerX=12.0f; carVelocity=0.0f; }
+        if(playerZ < -12.0f) { playerZ=-12.0f; carVelocity=0.0f; }
+        if(playerZ > 12.0f) { playerZ=12.0f; carVelocity=0.0f; }
         if(riding==1) { scooterX=playerX; scooterZ=playerZ; }
         if(riding==2) { carX=playerX; carZ=playerZ; }
 
