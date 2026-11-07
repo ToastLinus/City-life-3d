@@ -36,8 +36,6 @@ static float carX=2.5f, carZ=2.0f;
 static float scooterX=-2.5f, scooterZ=1.5f;
 static float trafficCarX=-1.55f, trafficCarZ=-10.0f, trafficCarYaw=3.1415926f;
 static float trafficCar2X=1.55f, trafficCar2Z=11.0f, trafficCar2Yaw=0.0f;
-static float trafficScooterX=-3.35f, trafficScooterZ=12.0f;
-static float trafficScooterYaw=3.1415926f;
 static int vehicleStyle=0;
 static int riding=0;
 static int firstPerson=0;
@@ -45,12 +43,12 @@ static int scooterTrick=0;
 static float cameraYaw=0.0f, cameraPitch=0.0f;
 static int touchWasDown=0;
 static touchPosition previousTouch;
-static s16 soundSamples[4096] __attribute__((aligned(0x80)));
+static s16 *soundSamples=NULL;
 static ndspWaveBuf soundWave;
 static int audioReady=0;
 
 static void playTone(float frequency,float duration,float volume) {
-    if(!audioReady) return;
+    if(!audioReady || !soundSamples) return;
     if(soundWave.status==NDSP_WBUF_QUEUED) return;
     int count=(int)(22050.0f*duration);
     if(count<1) count=1;
@@ -58,7 +56,7 @@ static void playTone(float frequency,float duration,float volume) {
     for(int i=0;i<count;i++) {
         float envelope=1.0f-(float)i/(float)count;
         float sample=sinf(6.2831853f*frequency*(float)i/22050.0f);
-        soundSamples[i]=(s16)(sample*envelope*volume*12000.0f);
+        soundSamples[i]=(s16)(sample*envelope*volume*24000.0f);
     }
     DSP_FlushDataCache(soundSamples,count*sizeof(s16));
     memset(&soundWave,0,sizeof(soundWave));
@@ -341,11 +339,14 @@ static void uploadVertices(void) {
 int main(void) {
     gfxInitDefault();
     if(ndspInit()==0) {
-        audioReady=1;
+        soundSamples=(s16*)linearAlloc(4096*sizeof(s16));
+        if(soundSamples) audioReady=1;
         ndspChnReset(0);
+        ndspSetMasterVol(1.0f);
         ndspChnSetInterp(0,NDSP_INTERP_LINEAR);
         ndspChnSetRate(0,22050.0f);
         ndspChnSetFormat(0,NDSP_FORMAT_MONO_PCM16);
+        playTone(660.0f,.16f,.65f);
     }
     consoleInit(GFX_BOTTOM,NULL);
     if(!C3D_Init(C3D_DEFAULT_CMDBUF_SIZE)) { gfxExit(); return 1; }
@@ -477,13 +478,11 @@ int main(void) {
         if(riding==1) { scooterX=playerX; scooterZ=playerZ; }
         if(riding==2) { carX=playerX; carZ=playerZ; }
 
-        // Ambient road traffic plus a separate scooter with its own rider.
+        // Two independent cars provide the ambient road traffic.
         trafficCarZ+=0.055f;
         if(trafficCarZ>13.0f) trafficCarZ=-13.0f;
         trafficCar2Z-=0.045f;
         if(trafficCar2Z < -13.0f) trafficCar2Z=13.0f;
-        trafficScooterZ-=0.060f;
-        if(trafficScooterZ < -13.0f) trafficScooterZ=13.0f;
 
         /* Sidewalk pedestrians move at a visible pace and animate their steps. */
         for(int i=0;i<NPC_COUNT;i++) {
@@ -507,9 +506,6 @@ int main(void) {
         person(npcX[5],npcZ[5],.72f,.32f,.28f,npcWalkPhase[5],0,-1.5708f);
         vehicle(scooterX,scooterZ,.12f,.68f,.86f);
         if(riding==1) scooterRider(scooterX,scooterZ,scooterYaw);
-        /* Independent traffic scooter: it has its own position and heading. */
-        scooterAt(trafficScooterX,trafficScooterZ,0.0f,0);
-        scooterRider(trafficScooterX,trafficScooterZ,0.0f);
         vehicle(carX,carZ,.86f,.25f,.18f);
         // Draw two independent traffic vehicles in opposite lanes.
         float savedCarX=carX, savedCarZ=carZ, savedCarYaw=carYaw;
@@ -555,7 +551,7 @@ int main(void) {
     shaderProgramFree(&prog);
     DVLB_Free(dvlb);
     C3D_Fini();
-    if(audioReady) ndspExit();
+    if(audioReady) { ndspExit(); linearFree(soundSamples); }
     gfxExit();
     return 0;
 }
