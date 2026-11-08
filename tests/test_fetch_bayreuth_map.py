@@ -61,12 +61,15 @@ class GeometryConversionTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "no valid road/building"):
             MODULE.build_features(payload)
 
-    def test_requires_real_bayreuth_area(self):
+    def test_accepts_target_area_features_without_admin_relation(self):
         payload = {"elements": [
-            way(13, {"highway": "residential"}, [(11.5, 49.9), (11.51, 49.9)])
+            way(13, {"highway": "residential"},
+                [(11.5, 49.9), (11.51, 49.9)])
         ]}
-        with self.assertRaisesRegex(RuntimeError, "did not resolve"):
-            MODULE.build_features(payload)
+        features, target_areas = MODULE.build_features(payload)
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0]["properties"]["kind"], "road")
+        self.assertIn("Unterpreuschwitz", target_areas["name"])
 
     def test_rejects_invalid_coordinates(self):
         self.assertIsNone(MODULE.valid_point({"lon": 999, "lat": 49.9}))
