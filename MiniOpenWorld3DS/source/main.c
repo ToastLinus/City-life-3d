@@ -353,7 +353,8 @@ static void addLandmarkModels(void) {
         box(ux,uy+.78f,uz-10.2f,2.8f,.12f,.12f,.25f,.14f,.08f);
         for(int lamp=0;lamp<3;lamp++) {
             float lx=ux-18.0f+(float)lamp*18.0f;
-            box(lx,uy,uz-14.0f,.12f,4.2f,.12f,.24f,.25f,.22f);\n            box(lx,uy+4.0f,uz-14.0f,.8f,.25f,.8f,.96f,.78f,.42f);
+            box(lx,uy,uz-14.0f,.12f,4.2f,.12f,.24f,.25f,.22f);
+            box(lx,uy+4.0f,uz-14.0f,.8f,.25f,.8f,.96f,.78f,.42f);
         }
     }
     addUnterpreuschwitzCats();
