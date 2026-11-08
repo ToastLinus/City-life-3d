@@ -7,8 +7,8 @@
 #include "bayreuth_tiles.h"
 
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-#define MAX_VERTICES 60000
-#define MAX_MAP_VERTICES 30000
+#define MAX_VERTICES 18000
+#define MAX_MAP_VERTICES 12000
 
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 typedef struct { float x,y,z; } Pos;
@@ -79,7 +79,7 @@ static int projectionLoc;
 static C3D_Mtx projection, view, viewProjection;
 static C3D_RenderTarget *target;
 
-static float playerX=0.0f, playerZ=0.0f;
+static float playerX=78.0f, playerZ=-260.0f;
 static int interiorMode=0; /* 0=outside, 1=Lidl, 2=Rotmain-Center mall */
 static float savedOutsideX=0.0f, savedOutsideZ=0.0f;
 #define NPC_COUNT 6
@@ -104,6 +104,12 @@ static touchPosition previousTouch;
 static s16 *soundSamples=NULL;
 static ndspWaveBuf soundWave;
 static int audioReady=0;
+static int menuSelection=0, gameStarted=0;
+static const float playerPalette[4][3]={{.12f,.40f,.92f},{.68f,.22f,.86f},{.12f,.72f,.42f},{.94f,.48f,.12f}};
+#define MAX_BUILDING_COLLIDERS 512
+typedef struct { float minX,maxX,minZ,maxZ; } BuildingCollider;
+static BuildingCollider buildingColliders[MAX_BUILDING_COLLIDERS];
+static int buildingColliderCount=0;
 
 static void playTone(float frequency,float duration,float volume) {
     if(!audioReady || !soundSamples) return;
@@ -597,7 +603,7 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float dx=x1-x0,dz=z1-z0,len=sqrtf(dx*dx+dz*dz);
             if(len<.05f) continue;
             float mx=(x0+x1)*.5f-playerX,mz=(z0+z1)*.5f-playerZ;
-            if(mx*mx+mz*mz>125.0f*125.0f) continue;
+            if(mx*mx+mz*mz>78.0f*78.0f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             float y0=terrainHeight(x0,z0)+.055f,y1=terrainHeight(x1,z1)+.055f;
@@ -605,10 +611,20 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
         }
     } else if(kind==BT3D_KIND_BUILDING && count>=3) {
         float bx=(float)tx*256.0f,bz=(float)tz*256.0f;
+        float minX=1.0e9f,maxX=-1.0e9f,minZ=1.0e9f,maxZ=-1.0e9f;
         float cx=0.0f,cz=0.0f;
-        for(uint16_t i=0;i<count;i++){cx+=(float)points[i].x_quarter_m*.25f;cz+=(float)points[i].z_quarter_m*.25f;}
-        cx=cx/(float)count+bx-playerX; cz=cz/(float)count+bz-playerZ;
-        if(cx*cx+cz*cz>125.0f*125.0f) return 0;
+        for(uint16_t i=0;i<count;i++){
+            float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
+            cx+=px; cz+=pz;
+            if(px<minX)minX=px; if(px>maxX)maxX=px;
+            if(pz<minZ)minZ=pz; if(pz>maxZ)maxZ=pz;
+        }
+        cx=cx/(float)count-playerX; cz=cz/(float)count-playerZ;
+        if(buildingColliderCount<MAX_BUILDING_COLLIDERS && maxX-minX<90.0f && maxZ-minZ<90.0f){
+            BuildingCollider *bc=&buildingColliders[buildingColliderCount++];
+            bc->minX=minX; bc->maxX=maxX; bc->minZ=minZ; bc->maxZ=maxZ;
+        }
+        if(cx*cx+cz*cz>78.0f*78.0f) return 0;
         /* Replace the two most recognizable shop footprints with hand-built models. */
         float worldCx=cx+playerX,worldCz=cz+playerZ;
         if(landmarkNear(worldCx,worldCz,-690.4f,400.6f,48.0f) ||
@@ -635,6 +651,7 @@ static void rebuildBayreuthMap(void) {
     FILE *file; Bt3dMap map; Bt3dPoint points[4096];
     int saved=vertexCount;
     bayreuthTileX=(int)floorf(playerX/256.0f); bayreuthTileZ=(int)floorf(playerZ/256.0f);
+    buildingColliderCount=0;
     loadTerrainTiles();
     vertexCount=0;
     addTerrainMesh();
@@ -651,6 +668,14 @@ static void rebuildBayreuthMap(void) {
     if(bayreuthVertexCount>MAX_MAP_VERTICES) bayreuthVertexCount=MAX_MAP_VERTICES;
     memcpy(bayreuthVertices,vertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
     vertexCount=saved; bayreuthReady=(bayreuthVertexCount>0); bayreuthGpuDirty=1;
+}
+
+static int hitsBuilding(float x,float z,float radius) {
+    for(int i=0;i<buildingColliderCount;i++) {
+        BuildingCollider *b=&buildingColliders[i];
+        if(x+radius>b->minX && x-radius<b->maxX && z+radius>b->minZ && z-radius<b->maxZ) return 1;
+    }
+    return 0;
 }
 
 static void uploadVertices(void) {
@@ -739,6 +764,25 @@ int main(void) {
     while(aptMainLoop()) {
         hidScanInput();
         u32 keys=hidKeysHeld(), down=hidKeysDown();
+        if(!gameStarted) {
+            if(down&KEY_LEFT) menuSelection=(menuSelection+3)%4;
+            if(down&KEY_RIGHT) menuSelection=(menuSelection+1)%4;
+            consoleClear();
+            printf("\x1b[1;1H       CITY LIFE 3D");
+            printf("\x1b[3;1H   SPIELERFARBE AUSWAEHLEN");
+            printf("\x1b[5;1H   <  LINKS / RECHTS  >");
+            printf("\x1b[7;1H   %s BLAU",menuSelection==0?">":" ");
+            printf("\x1b[8;1H   %s LILA",menuSelection==1?">":" ");
+            printf("\x1b[9;1H   %s GRUEN",menuSelection==2?">":" ");
+            printf("\x1b[10;1H   %s ORANGE",menuSelection==3?">":" ");
+            printf("\x1b[13;1H       A: SPIELEN");
+            if(down&KEY_A) { gameStarted=1; consoleClear(); }
+            C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+            C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);
+            C3D_FrameDrawOn(target);
+            C3D_FrameEnd(0);
+            continue;
+        }
         if(down&KEY_START) break;
         if(down&KEY_X) firstPerson=!firstPerson;
         if(down&KEY_B && riding==0 && playerJump<=0.001f) {
@@ -838,7 +882,7 @@ int main(void) {
         }
         /* Tree trunks block walking, scooter and car movement. */
         float collisionRadius=riding==2?0.95f:(riding==1?0.48f:0.34f);
-        if(hitsTree(playerX,playerZ,collisionRadius)) {
+        if(hitsTree(playerX,playerZ,collisionRadius) || (!interiorMode && hitsBuilding(playerX,playerZ,collisionRadius))) {
             playerX=previousX;
             playerZ=previousZ;
             if(riding==2) carVelocity=0.0f;
@@ -892,7 +936,7 @@ int main(void) {
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         vehicleStyle=savedStyle;
         }
-        { int start=vertexCount; if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw); liftNewVertices(start,terrainHeight(playerX,playerZ)); }
+        { int start=vertexCount; if(!riding) person(playerX,playerZ,playerPalette[menuSelection][0],playerPalette[menuSelection][1],playerPalette[menuSelection][2],0.0f,playerJump,playerYaw); liftNewVertices(start,terrainHeight(playerX,playerZ)); }
         uploadVertices();
 
         C3D_FVec eye, look;
