@@ -47,7 +47,7 @@ class GeometryConversionTests(unittest.TestCase):
                  (11.5, 49.91), (11.5, 49.9)]),
         ]}
         features, resolved_area = MODULE.build_features(payload)
-        self.assertEqual(resolved_area["id"], 3600000001)
+        self.assertEqual(resolved_area["name"], "Rotmain-Center, Hofgarten, Lidl Meranierring, Unterpreuschwitz")
         self.assertEqual([f["properties"]["kind"] for f in features],
                          ["road", "building"])
         self.assertEqual(features[1]["geometry"]["type"], "Polygon")
