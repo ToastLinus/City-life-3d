@@ -8,7 +8,6 @@ import gzip
 import json
 import math
 import sys
-import time
 import urllib.parse
 import urllib.request
 
@@ -59,7 +58,7 @@ def fetch():
         received = False
         # Try independent public providers for this smaller area request.
         for endpoint in ENDPOINTS:
-            for attempt in range(2):
+            for attempt in range(1):
                 request = urllib.request.Request(
                     endpoint,
                     data=data,
@@ -70,7 +69,7 @@ def fetch():
                     },
                 )
                 try:
-                    with urllib.request.urlopen(request, timeout=100) as response:
+                    with urllib.request.urlopen(request, timeout=25) as response:
                         raw = response.read()
                         payload = decode_response(raw, response.headers.get("Content-Encoding", ""))
                     if payload.get("remark"):
@@ -85,9 +84,7 @@ def fetch():
                     break
                 except Exception as exc:
                     last_error = exc
-                    print(f"Area {area_index}, attempt {attempt + 1}/2 failed: {endpoint}: {exc}", file=sys.stderr)
-                    if attempt == 0:
-                        time.sleep(5)
+                    print(f"Area {area_index}, attempt {attempt + 1} failed: {endpoint}: {exc}", file=sys.stderr)
             if received:
                 break
             print(f"Trying next Overpass provider for area {area_index}: {endpoint}", file=sys.stderr)
