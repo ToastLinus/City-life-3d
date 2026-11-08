@@ -180,6 +180,82 @@ static void tree(float x,float z) {
               V(x+.67f,0.82f,z,.10f,.48f,.18f),V(x,0.82f,z+.67f,.08f,.42f,.15f)};
     for(int i=0;i<4;i++) tri(q[i],q[(i+1)%4],tip2);
 }
+static int landmarkNear(float x,float z,float cx,float cz,float radius) {
+    float dx=x-cx,dz=z-cz;
+    return dx*dx+dz*dz<radius*radius;
+}
+/* Custom low-poly landmarks are added only when the player is nearby.
+   Coordinates use the same local Bayreuth projection as the OSM tiles. */
+static void addLandmarkModels(void) {
+    /* Rotmain-Center: broad multi-storey shopping-centre mass and glass bands. */
+    const float rcx=-690.4f, rcz=400.6f;
+    if(landmarkNear(playerX,playerZ,rcx,rcz,125.0f)) {
+        float y=terrainHeight(rcx,rcz);
+        box(rcx,y,rcz,78.0f,15.0f,40.0f,.58f,.60f,.61f);
+        box(rcx,y+15.0f,rcz,80.0f,1.0f,42.0f,.34f,.36f,.38f);
+        for(int level=0;level<3;level++) {
+            float wy=y+3.0f+(float)level*3.7f;
+            box(rcx,wy,rcz-20.35f,70.0f,2.1f,.18f,.20f,.43f,.56f);
+            box(rcx,wy,rcz+20.35f,70.0f,2.1f,.18f,.20f,.43f,.56f);
+            box(rcx-39.1f,wy,rcz, .18f,2.1f,34.0f,.20f,.43f,.56f);
+            box(rcx+39.1f,wy,rcz, .18f,2.1f,34.0f,.20f,.43f,.56f);
+        }
+        box(rcx,y+1.5f,rcz-20.8f,18.0f,3.0f,.7f,.72f,.12f,.14f);
+        box(rcx,y+.25f,rcz-22.0f,12.0f,.25f,3.0f,.28f,.30f,.32f);
+        /* Forecourt and visible parking rows. */
+        box(rcx,y+.03f,rcz+34.0f,88.0f,.08f,22.0f,.28f,.29f,.30f);
+        for(int i=0;i<10;i++)
+            box(rcx-38.0f+(float)i*8.4f,y+.10f,rcz+34.0f,.16f,.035f,8.0f,.88f,.88f,.82f);
+    }
+    /* Lidl, Meranierring 49: low supermarket, blue/yellow fascia and car park. */
+    const float lx=-2357.7f, lz=1014.1f;
+    if(landmarkNear(playerX,playerZ,lx,lz,125.0f)) {
+        float y=terrainHeight(lx,lz);
+        box(lx,y,lz,48.0f,7.0f,29.0f,.83f,.84f,.80f);
+        box(lx,y+7.0f,lz,49.0f,.65f,30.0f,.28f,.30f,.32f);
+        box(lx,y+4.8f,lz-14.8f,45.0f,1.15f,.25f,.08f,.22f,.68f);
+        box(lx,y+5.0f,lz-15.0f,10.0f,.72f,.32f,.98f,.83f,.08f);
+        box(lx,y+2.1f,lz-14.85f,12.0f,2.6f,.20f,.20f,.62f,.72f);
+        box(lx-3.0f,y+.1f,lz-14.98f,2.2f,2.0f,.18f,.10f,.18f,.22f);
+        box(lx+3.0f,y+.1f,lz-14.98f,2.2f,2.0f,.18f,.10f,.18f,.22f);
+        /* Parking apron, pedestrian strip and individual bay markings. */
+        box(lx,y+.025f,lz+31.0f,68.0f,.06f,29.0f,.27f,.28f,.29f);
+        box(lx,y+.075f,lz+14.5f,56.0f,.06f,4.0f,.68f,.67f,.61f);
+        for(int i=0;i<12;i++)
+            box(lx-31.0f+(float)i*5.6f,y+.11f,lz+31.0f,.13f,.025f,10.0f,.91f,.91f,.86f);
+        box(lx,y+.09f,lz-17.0f,14.0f,.08f,3.0f,.72f,.72f,.68f);
+    }
+    /* Hofgarten: formal paths, water channel, tree alleys and the Sonnentempel. */
+    const float hx=78.3f, hz=-260.7f;
+    if(landmarkNear(playerX,playerZ,hx,hz,125.0f)) {
+        float y=terrainHeight(hx,hz);
+        box(hx,y+.025f,hz,8.0f,.06f,150.0f,.48f,.39f,.25f);
+        box(hx,y+.03f,hz,120.0f,.06f,5.0f,.48f,.39f,.25f);
+        box(hx+28.0f,y+.04f,hz,5.0f,.07f,105.0f,.12f,.42f,.66f);
+        box(hx+28.0f,y+.08f,hz,2.4f,.08f,105.0f,.22f,.60f,.78f);
+        for(int i=0;i<8;i++) {
+            float tx=hx-43.0f+(float)i*12.0f;
+            tree(tx,hz-45.0f);
+            tree(tx,hz+45.0f);
+        }
+        for(int i=0;i<5;i++) {
+            float tz=hz-30.0f+(float)i*15.0f;
+            tree(hx-52.0f,tz);
+            tree(hx+52.0f,tz);
+        }
+        /* Eight-column circular pavilion, a simplified Sonnentempel silhouette. */
+        const float sx=35.9f, sz=-263.3f;
+        float sy=terrainHeight(sx,sz);
+        for(int i=0;i<8;i++) {
+            float a=(float)i*6.2831853f/8.0f;
+            box(sx+cosf(a)*2.6f,sy,sz+sinf(a)*2.6f,.38f,3.1f,.38f,.88f,.84f,.70f);
+        }
+        box(sx,sy+3.15f,sz,6.8f,.48f,6.8f,.86f,.82f,.68f);
+        box(sx,sy+3.65f,sz,5.2f,.35f,5.2f,.72f,.66f,.50f);
+        box(sx,sy+.12f,sz,5.5f,.18f,5.5f,.52f,.46f,.34f);
+    }
+    /* Unterpreuschwitz keeps its real OSM road and house footprints; no invented blocks. */
+}
 static void person(float x,float z,float r,float g,float b,float phase,float lift,float yaw) {
     /* Head, torso, arms and animated legs; face points toward local -Z. */
     float swing=sinf(phase)*.13f;
@@ -406,6 +482,10 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
         for(uint16_t i=0;i<count;i++){cx+=(float)points[i].x_quarter_m*.25f;cz+=(float)points[i].z_quarter_m*.25f;}
         cx=cx/(float)count+bx-playerX; cz=cz/(float)count+bz-playerZ;
         if(cx*cx+cz*cz>125.0f*125.0f) return 0;
+        /* Replace the two most recognizable shop footprints with hand-built models. */
+        float worldCx=cx+playerX,worldCz=cz+playerZ;
+        if(landmarkNear(worldCx,worldCz,-690.4f,400.6f,48.0f) ||
+           landmarkNear(worldCx,worldCz,-2357.7f,1014.1f,30.0f)) return 0;
         for(uint16_t i=1;i+1<count;i++) {
             float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
@@ -431,6 +511,7 @@ static void rebuildBayreuthMap(void) {
     loadTerrainTiles();
     vertexCount=0;
     addTerrainMesh();
+    addLandmarkModels();
     file=fopen("romfs:/bayreuth-tiles.bin","rb");
     if(file && bt3d_open(file,&map)==0) {
         while(map.tiles_read<map.tile_count) {
