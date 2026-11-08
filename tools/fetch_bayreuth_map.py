@@ -39,7 +39,7 @@ def query_for_bbox(bbox):
   way["building"]({box});
 );
 out body geom;
-\"\"\"
+"""
 
 
 
