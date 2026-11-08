@@ -331,7 +331,7 @@ static void addLandmarkModels(void) {
         box(sx,sy+.12f,sz,5.5f,.18f,5.5f,.52f,.46f,.34f);
     }
     /* Unterpreuschwitz: small village green, garden fences and a rural lane feel. */
-    const ux=-3672.1f, uz=1334.5f;
+    const float ux=-3672.1f, uz=1334.5f;
     if(landmarkNear(playerX,playerZ,ux,uz,115.0f)) {
         float uy=terrainHeight(ux,uz);
         box(ux,uy+.035f,uz,28.0f,.07f,20.0f,.28f,.48f,.23f);
