@@ -215,17 +215,21 @@ static void catModel(float x,float z,float r,float g,float b,float variant) {
 static void addUnterpreuschwitzCats(void) {
     /* Village centre, using the same local projection as the OSM map. */
     const float cx=-3672.1f, cz=1334.5f;
-    static const float offsets[12][2]={
+    static const float offsets[20][2]={
         {-29,-18},{-15,-25},{2,-19},{22,-14},
         {-27,1},{-8,5},{12,8},{30,17},
-        {-19,25},{2,31},{21,27},{39,-2}
+        {-19,25},{2,31},{21,27},{39,-2},
+        {-42,-34},{48,30},{-45,35},{8,-42},
+        {52,-25},{-4,45},{35,45},{-52,12}
     };
-    static const float coats[12][3]={
+    static const float coats[20][3]={
         {.86f,.76f,.58f},{.36f,.38f,.42f},{.90f,.42f,.16f},{.92f,.90f,.82f},
         {.20f,.20f,.23f},{.72f,.48f,.27f},{.72f,.73f,.76f},{.92f,.86f,.70f},
-        {.34f,.25f,.19f},{.94f,.48f,.20f},{.82f,.82f,.78f},{.22f,.22f,.25f}
+        {.34f,.25f,.19f},{.94f,.48f,.20f},{.82f,.82f,.78f},{.22f,.22f,.25f},
+        {.88f,.84f,.76f},{.45f,.34f,.26f},{.72f,.72f,.70f},{.18f,.18f,.20f},
+        {.92f,.88f,.82f},{.62f,.42f,.24f},{.86f,.86f,.86f},{.28f,.28f,.30f}
     };
-    for(int i=0;i<12;i++) {
+    for(int i=0;i<20;i++) {
         float x=cx+offsets[i][0], z=cz+offsets[i][1];
         if(landmarkNear(playerX,playerZ,x,z,68.0f))
             catModel(x,z,coats[i][0],coats[i][1],coats[i][2],(float)i);
@@ -291,6 +295,30 @@ static void addLandmarkModels(void) {
             tree(hx-52.0f,tz);
             tree(hx+52.0f,tz);
         }
+        /* Garden beds, benches and lamps make the park feel like a place to explore. */
+        for(int side=0;side<2;side++) {
+            float px=hx+(side? -17.0f:17.0f);
+            for(int i=0;i<5;i++) {
+                float pz=hz-42.0f+(float)i*21.0f;
+                box(px,y+.10f,pz,5.0f,.18f,3.2f,.34f,.25f,.16f);
+                for(int flower=0;flower<5;flower++) {
+                    float fx=px-1.8f+(float)flower*.9f;
+                    box(fx,y+.30f,pz,.42f,.30f,.42f,
+                        flower%2?.88f:.94f,flower%2?.32f:.72f,.48f);
+                }
+            }
+        }
+        for(int i=0;i<4;i++) {
+            float bz=hz-36.0f+(float)i*24.0f;
+            box(hx-12.0f,y+.55f,bz,3.2f,.16f,.48f,.38f,.20f,.10f);
+            box(hx-12.0f,y+.78f,bz-.18f,3.2f,.12f,.12f,.22f,.13f,.08f);
+            box(hx+14.0f,y+.55f,bz,3.2f,.16f,.48f,.38f,.20f,.10f);
+            box(hx+14.0f,y+.78f,bz-.18f,3.2f,.12f,.12f,.22f,.13f,.08f);
+        }
+        /* Small circular fountain beside the main crossing. */
+        box(hx-17.0f,y+.12f,hz+18.0f,5.5f,.22f,5.5f,.66f,.65f,.60f);
+        box(hx-17.0f,y+.35f,hz+18.0f,3.5f,.28f,3.5f,.18f,.48f,.68f);
+        box(hx-17.0f,y+.66f,hz+18.0f,1.2f,.38f,1.2f,.34f,.68f,.82f);
         /* Eight-column circular pavilion, a simplified Sonnentempel silhouette. */
         const float sx=35.9f, sz=-263.3f;
         float sy=terrainHeight(sx,sz);
@@ -302,7 +330,32 @@ static void addLandmarkModels(void) {
         box(sx,sy+3.65f,sz,5.2f,.35f,5.2f,.72f,.66f,.50f);
         box(sx,sy+.12f,sz,5.5f,.18f,5.5f,.52f,.46f,.34f);
     }
-    /* Unterpreuschwitz keeps its real OSM road and house footprints; no invented blocks. */
+    /* Unterpreuschwitz: small village green, garden fences and a rural lane feel. */
+    const ux=-3672.1f, uz=1334.5f;
+    if(landmarkNear(playerX,playerZ,ux,uz,115.0f)) {
+        float uy=terrainHeight(ux,uz);
+        box(ux,uy+.035f,uz,28.0f,.07f,20.0f,.28f,.48f,.23f);
+        /* Two planted garden strips and low wooden fence sections. */
+        for(int garden=0;garden<2;garden++) {
+            float gx=ux+(garden? -25.0f:25.0f);
+            box(gx,uy+.08f,uz+8.0f,12.0f,.12f,7.0f,.30f,.40f,.18f);
+            for(int row=0;row<3;row++) for(int plant=0;plant<5;plant++)
+                box(gx-4.5f+(float)plant*2.2f,uy+.20f,uz+5.8f+(float)row*1.5f,
+                    .48f,.38f,.48f,.22f+(float)(plant%2)*.18f,.42f,.16f);
+            for(int post=0;post<7;post++) {
+                float fx=gx-6.0f+(float)post*2.0f;
+                box(fx,uy+.02f,uz+12.0f,.13f,.85f,.13f,.42f,.27f,.14f);
+                if(post<6) box(fx+1.0f,uy+.36f,uz+12.0f,2.0f,.10f,.10f,.48f,.32f,.18f);
+            }
+        }
+        /* A village bench and warm street lamps near the green. */
+        box(ux,uy+.55f,uz-10.0f,2.8f,.16f,.48f,.42f,.23f,.12f);
+        box(ux,uy+.78f,uz-10.2f,2.8f,.12f,.12f,.25f,.14f,.08f);
+        for(int lamp=0;lamp<3;lamp++) {
+            float lx=ux-18.0f+(float)lamp*18.0f;
+            box(lx,uy,uz-14.0f,.12f,4.2f,.12f,.24f,.25f,.22f);\n            box(lx,uy+4.0f,uz-14.0f,.8f,.25f,.8f,.96f,.78f,.42f);
+        }
+    }
     addUnterpreuschwitzCats();
 }
 static void addInteriorScene(void) {
