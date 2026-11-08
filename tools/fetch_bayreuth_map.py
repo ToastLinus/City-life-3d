@@ -20,20 +20,27 @@ ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
-QUERY = r"""
-[out:json][timeout:90];
+# Keep the four requested areas as separate, smaller Overpass requests.
+BBOXES = [
+    (49.9378, 11.5597, 49.9538, 11.5797),  # Rotmain-Center / Hofgarten
+    (49.9329, 11.5715, 49.9469, 11.5895),  # Lidl / Roter Hügel
+    (49.9443, 11.5374, 49.9583, 11.5554),  # western Bayreuth area
+    (49.9482, 11.5201, 49.9602, 11.5361),  # Unterpreuschwitz
+]
+
+
+def query_for_bbox(bbox):
+    south, west, north, east = bbox
+    box = f"{south},{west},{north},{east}"
+    return f\"\"\"
+[out:json][timeout:60];
 (
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9378,11.5597,49.9538,11.5797);
-  way["building"](49.9378,11.5597,49.9538,11.5797);
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9329,11.5715,49.9469,11.5895);
-  way["building"](49.9329,11.5715,49.9469,11.5895);
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9443,11.5374,49.9583,11.5554);
-  way["building"](49.9443,11.5374,49.9583,11.5554);
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9482,11.5201,49.9602,11.5361);
-  way["building"](49.9482,11.5201,49.9602,11.5361);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"]({box});
+  way["building"]({box});
 );
 out body geom;
-"""
+\"\"\"
+
 
 
 def decode_response(raw, content_encoding=""):
@@ -44,50 +51,53 @@ def decode_response(raw, content_encoding=""):
 
 
 def fetch():
-    data = urllib.parse.urlencode({"data": QUERY}).encode()
-    last_error = None
-    # Two attempts per independent provider, with bounded backoff. This avoids
-    # hammering a busy public server while still surviving transient 502/504s.
-    for endpoint in ENDPOINTS:
-        for attempt in range(2):
-            request = urllib.request.Request(
-                endpoint,
-                data=data,
-                headers={
-                    "User-Agent": "CITY-LIFE-3D map asset builder/1.2 (OSM attribution included; one-time Bayreuth map export)",
-                    "Accept": "application/json",
-                    "Accept-Encoding": "gzip",
-                },
-            )
-            try:
-                with urllib.request.urlopen(request, timeout=150) as response:
-                    raw = response.read()
-                    payload = decode_response(
-                        raw, response.headers.get("Content-Encoding", "")
-                    )
-                if payload.get("remark"):
-                    raise RuntimeError(payload["remark"])
-                # Some Overpass mirrors return HTTP 200 with only the boundary
-                # relation and silently omit the requested ways when overloaded.
-                # Validate the actual map payload here so the next provider is tried.
-                build_features(payload)
-                return payload
-            except Exception as exc:
-                last_error = exc
-                retry_after = 0
-                if isinstance(exc, urllib.error.HTTPError):
-                    try:
-                        retry_after = int(exc.headers.get("Retry-After", "0"))
-                    except (TypeError, ValueError):
-                        retry_after = 0
-                print(
-                    f"Overpass attempt {attempt + 1}/2 failed: {endpoint}: {exc}",
-                    file=sys.stderr,
+    """Fetch each target area separately to avoid oversized Overpass queries."""
+    merged = {}
+    for area_index, bbox in enumerate(BBOXES, start=1):
+        data = urllib.parse.urlencode({"data": query_for_bbox(bbox)}).encode()
+        last_error = None
+        received = False
+        # Try independent public providers for this smaller area request.
+        for endpoint in ENDPOINTS:
+            for attempt in range(2):
+                request = urllib.request.Request(
+                    endpoint,
+                    data=data,
+                    headers={
+                        "User-Agent": "CITY-LIFE-3D map asset builder/1.3 (OSM attribution included; one-time Bayreuth map export)",
+                        "Accept": "application/json",
+                        "Accept-Encoding": "gzip",
+                    },
                 )
-                if attempt == 0:
-                    time.sleep(min(max(retry_after, 3), 20))
-        print(f"Moving to next independent Overpass provider: {endpoint}", file=sys.stderr)
-    raise RuntimeError(f"All Overpass endpoints failed: {last_error}")
+                try:
+                    with urllib.request.urlopen(request, timeout=100) as response:
+                        raw = response.read()
+                        payload = decode_response(raw, response.headers.get("Content-Encoding", ""))
+                    if payload.get("remark"):
+                        raise RuntimeError(payload["remark"])
+                    # Validate each area independently; never accept an empty tile.
+                    build_features(payload)
+                    for element in payload.get("elements", []):
+                        if element.get("type") == "way" and element.get("id") is not None:
+                            merged[element["id"]] = element
+                    received = True
+                    print(f"Fetched Bayreuth area {area_index}/{len(BBOXES)} from {endpoint}")
+                    break
+                except Exception as exc:
+                    last_error = exc
+                    print(f"Area {area_index}, attempt {attempt + 1}/2 failed: {endpoint}: {exc}", file=sys.stderr)
+                    if attempt == 0:
+                        time.sleep(5)
+            if received:
+                break
+            print(f"Trying next Overpass provider for area {area_index}: {endpoint}", file=sys.stderr)
+        if not received:
+            raise RuntimeError(f"Could not fetch Bayreuth area {area_index}: {last_error}")
+
+    payload = {"elements": list(merged.values()), "osm3s": {"timestamp_osm_base": None}}
+    # Validate the combined dataset as well.
+    build_features(payload)
+    return payload
 
 
 def valid_point(point):
