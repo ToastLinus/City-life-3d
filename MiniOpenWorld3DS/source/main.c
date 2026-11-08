@@ -80,6 +80,8 @@ static C3D_Mtx projection, view, viewProjection;
 static C3D_RenderTarget *target;
 
 static float playerX=0.0f, playerZ=0.0f;
+static int interiorMode=0; /* 0=outside, 1=Lidl, 2=Rotmain-Center mall */
+static float savedOutsideX=0.0f, savedOutsideZ=0.0f;
 #define NPC_COUNT 6
 /* Pedestrians walk along the two clear sidewalk strips. */
 static float npcX[NPC_COUNT]={-3.35f,-3.35f,-3.35f,3.35f,3.35f,3.35f};
@@ -256,6 +258,72 @@ static void addLandmarkModels(void) {
     }
     /* Unterpreuschwitz keeps its real OSM road and house footprints; no invented blocks. */
 }
+static void addInteriorScene(void) {
+    if(interiorMode==1) {
+        box(0,-.16f,0,25.0f,.22f,21.0f,.67f,.67f,.63f);
+        box(-12.3f,0,0,.35f,4.0f,21.0f,.88f,.87f,.80f);
+        box(12.3f,0,0,.35f,4.0f,21.0f,.88f,.87f,.80f);
+        box(0,0,-10.3f,25.0f,4.0f,.35f,.88f,.87f,.80f);
+        box(-9.5f,0,10.3f,5.5f,4.0f,.35f,.88f,.87f,.80f);
+        box(9.5f,0,10.3f,5.5f,4.0f,.35f,.88f,.80f);
+        box(0,2.9f,-10.05f,5.0f,1.0f,.12f,.06f,.20f,.68f);
+        box(0,3.0f,-9.96f,2.5f,.62f,.08f,.98f,.84f,.08f);
+        for(int i=0;i<5;i++) {
+            float x=-9.0f+(float)i*4.5f;
+            box(x,.05f,-7.8f,3.3f,1.8f,.75f,.72f,.75f,.77f);
+            box(x,1.0f,-7.38f,3.0f,.10f,.08f,.30f,.68f,.78f);
+        }
+        for(int row=0;row<3;row++) {
+            float z=-3.0f+(float)row*4.0f;
+            box(-4.8f,.0f,z,1.0f,1.65f,3.0f,.72f,.48f,.25f);
+            box(-4.8f,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            box(-4.8f,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            box(0,.0f,z,1.0f,1.65f,3.0f,.26f,.48f,.68f);
+            box(0,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            box(0,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            box(4.8f,.0f,z,1.0f,1.65f,3.0f,.72f,.48f,.25f);
+            box(4.8f,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            box(4.8f,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+        }
+        for(int i=0;i<3;i++) {
+            float x=-5.0f+(float)i*5.0f;
+            box(x,.0f,7.0f,3.4f,.95f,1.0f,.20f,.24f,.27f);
+            box(x,1.0f,6.75f,1.0f,.10f,.55f,.12f,.14f,.16f);
+        }
+    } else if(interiorMode==2) {
+        box(0,-.16f,0,37.0f,.22f,23.0f,.70f,.69f,.65f);
+        box(-18.3f,0,0,.35f,4.5f,23.0f,.82f,.83f,.82f);
+        box(18.3f,0,0,.35f,4.5f,23.0f,.82f,.83f,.82f);
+        box(0,0,-11.3f,37.0f,4.5f,.35f,.82f,.83f,.82f);
+        box(-16.0f,0,11.3f,4.0f,4.5f,.35f,.82f,.83f,.82f);
+        box(16.0f,0,11.3f,4.0f,4.5f,.35f,.82f,.83f,.82f);
+        for(int shop=0;shop<3;shop++) {
+            float cx=-11.5f+(float)shop*11.5f;
+            box(cx,0,-7.8f,10.0f,3.5f,.25f,.55f,.57f,.60f);
+            box(cx,0,-3.2f,.25f,3.5f,9.0f,.55f,.57f,.60f);
+            box(cx,2.6f,-5.5f,8.5f,.65f,.20f,shop==0?.12f:(shop==1?.12f:.72f),shop==0?.35f:(shop==1?.52f:.22f),shop==0?.68f:(shop==1?.76f:.18f));
+            if(shop==0) {
+                for(int i=0;i<3;i++) box(cx-2.8f+(float)i*2.8f,.0f,-7.0f,1.6f,1.1f,1.5f,.38f,.30f,.22f);
+            } else if(shop==1) {
+                for(int i=0;i<3;i++) {
+                    box(cx-2.8f+(float)i*2.8f,.0f,-7.0f,1.0f,2.0f,1.0f,.28f,.42f,.62f);
+                    box(cx-2.8f+(float)i*2.8f,1.0f,-6.45f,.9f,.08f,.08f,.92f,.92f,.88f);
+                }
+            } else {
+                for(int i=0;i<4;i++) box(cx-3.2f+(float)i*2.1f,.0f,-7.2f,1.3f,1.3f,.65f,.70f,.36f,.22f);
+            }
+        }
+        for(int i=0;i<4;i++) {
+            float x=-12.0f+(float)i*8.0f;
+            box(x,.35f,3.2f,2.4f,.18f,.65f,.43f,.25f,.13f);
+            box(x-1.0f,.0f,3.2f,.12f,.35f,.12f,.20f,.21f,.22f);
+            box(x+1.0f,.0f,3.2f,.12f,.35f,.12f,.20f,.21f,.22f);
+            box(x,.25f,8.0f,1.4f,.5f,1.2f,.34f,.22f,.12f);
+            box(x,.8f,8.0f,.9f,.7f,.8f,.12f,.46f,.20f);
+        }
+    }
+}
+
 static void person(float x,float z,float r,float g,float b,float phase,float lift,float yaw) {
     /* Head, torso, arms and animated legs; face points toward local -Z. */
     float swing=sinf(phase)*.13f;
@@ -527,7 +595,7 @@ static void rebuildBayreuthMap(void) {
 }
 
 static void uploadVertices(void) {
-    int mapCount=bayreuthReady?bayreuthVertexCount:0;
+    int mapCount=(bayreuthReady && !interiorMode)?bayreuthVertexCount:0;
     if(mapCount>MAX_VERTICES) mapCount=MAX_VERTICES;
     if(bayreuthGpuDirty) {
         for(int i=0;i<mapCount;i++) {
@@ -622,19 +690,31 @@ int main(void) {
         if(riding!=0) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         scooterTrick=(riding==1 && (keys&KEY_Y))?1:0;
         if(down&KEY_A) {
-            if(riding) {
+            if(interiorMode) {
+                if(playerZ>8.0f && fabsf(playerX)<2.8f) {
+                    interiorMode=0;
+                    playerX=savedOutsideX;
+                    playerZ=savedOutsideZ;
+                    cameraYaw=0.0f;
+                    playTone(420.0f,.12f,.55f);
+                }
+            } else if(!riding) {
+                float drc=(playerX+690.4f)*(playerX+690.4f)+(playerZ-378.6f)*(playerZ-378.6f);
+                float dl=(playerX+2357.7f)*(playerX+2357.7f)+(playerZ-997.1f)*(playerZ-997.1f);
+                if(drc<64.0f || dl<64.0f) {
+                    savedOutsideX=playerX; savedOutsideZ=playerZ;
+                    interiorMode=(drc<dl)?2:1;
+                    playerX=0.0f; playerZ=7.0f; cameraYaw=0.0f;
+                    playTone(660.0f,.14f,.55f);
+                } else {
+                    float ds=(playerX-scooterX)*(playerX-scooterX)+(playerZ-scooterZ)*(playerZ-scooterZ);
+                    float dc=(playerX-carX)*(playerX-carX)+(playerZ-carZ)*(playerZ-carZ);
+                    if(ds<dc && ds<3.0f) { riding=1; playTone(660.0f,.12f,.55f); }
+                    else if(dc<3.0f) { riding=2; playTone(740.0f,.14f,.55f); }
+                }
+            } else {
                 riding=0;
                 playTone(420.0f,.12f,.55f);
-            } else {
-                float ds=(playerX-scooterX)*(playerX-scooterX)+(playerZ-scooterZ)*(playerZ-scooterZ);
-                float dc=(playerX-carX)*(playerX-carX)+(playerZ-carZ)*(playerZ-carZ);
-                if(ds<dc && ds<3.0f) {
-                    riding=1;
-                    playTone(660.0f,.12f,.55f);
-                } else if(dc<3.0f) {
-                    riding=2;
-                    playTone(740.0f,.14f,.55f);
-                }
             }
         }
         // Touchscreen drag rotates the camera; vertical drag adjusts camera height.
@@ -718,9 +798,10 @@ int main(void) {
             if(playerJump<=0.0f) { playerJump=0.0f; playerJumpVelocity=0.0f; }
         }
 
-        if(!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ) rebuildBayreuthMap();
-        vertexCount=bayreuthReady?bayreuthVertexCount:0;
-        if(!bayreuthReady) box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
+        if(!interiorMode && (!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ)) rebuildBayreuthMap();
+        vertexCount=(!interiorMode && bayreuthReady)?bayreuthVertexCount:0;
+        if(interiorMode) addInteriorScene();
+        else if(!bayreuthReady) box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
         { int start=vertexCount; person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[0],npcZ[0])); }
         { int start=vertexCount; person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[1],npcZ[1])); }
         { int start=vertexCount; person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[2],npcZ[2])); }
