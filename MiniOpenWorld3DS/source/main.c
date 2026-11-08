@@ -199,17 +199,12 @@ static int landmarkNear(float x,float z,float cx,float cz,float radius) {
 /* Small low-poly village cats. Kept lightweight for the 3DS GPU. */
 static void catModel(float x,float z,float r,float g,float b,float variant) {
     float y=terrainHeight(x,z);
-    /* Rounded-looking chunky body, head and curled tail. */
+    /* Compact silhouette keeps the village cats within the 3DS mesh budget. */
     box(x,y+.08f,z,.72f,.38f,.48f,r,g,b);
     box(x,y+.30f,z-.28f,.43f,.40f,.40f,r*.94f,g*.94f,b*.94f);
     box(x+.37f,y+.22f,z+.17f,.16f,.12f,.46f,r*.82f,g*.82f,b*.82f);
-    /* Pointed ears. */
     tri(V(x-.19f,y+.60f,z-.39f,r,g,b),V(x-.12f,y+.88f,z-.35f,r,g,b),V(x-.02f,y+.60f,z-.39f,r,g,b));
     tri(V(x+.02f,y+.60f,z-.39f,r,g,b),V(x+.12f,y+.88f,z-.35f,r,g,b),V(x+.20f,y+.60f,z-.39f,r,g,b));
-    /* Bright eyes and a tiny nose make the face readable at 3DS scale. */
-    box(x-.09f,y+.49f,z-.485f,.055f,.07f,.025f,.08f,.09f,.10f);
-    box(x+.09f,y+.49f,z-.485f,.055f,.07f,.025f,.08f,.09f,.10f);
-    box(x,y+.40f,z-.495f,.07f,.045f,.025f,.92f,.48f,.56f);
     (void)variant;
 }
 static void addUnterpreuschwitzCats(void) {
@@ -330,6 +325,8 @@ static void addLandmarkModels(void) {
         box(sx,sy+3.65f,sz,5.2f,.35f,5.2f,.72f,.66f,.50f);
         box(sx,sy+.12f,sz,5.5f,.18f,5.5f,.52f,.46f,.34f);
     }
+    /* Render the requested cats before optional village decoration. */
+    addUnterpreuschwitzCats();
     /* Unterpreuschwitz: small village green, garden fences and a rural lane feel. */
     const float ux=-3672.1f, uz=1334.5f;
     if(landmarkNear(playerX,playerZ,ux,uz,115.0f)) {
@@ -357,7 +354,6 @@ static void addLandmarkModels(void) {
             box(lx,uy+4.0f,uz-14.0f,.8f,.25f,.8f,.96f,.78f,.42f);
         }
     }
-    addUnterpreuschwitzCats();
 }
 static void addInteriorScene(void) {
     if(interiorMode==1) {
@@ -768,7 +764,6 @@ static void rebuildBayreuthMap(void) {
              V(playerX-640.0f,gy,playerZ+640.0f,.25f,.48f,.27f));
     }
     addTerrainMesh();
-    addLandmarkModels();
     file=fopen("romfs:/bayreuth-tiles.bin","rb");
     if(file && bt3d_open(file,&map)==0) {
         while(map.tiles_read<map.tile_count) {
@@ -777,6 +772,8 @@ static void rebuildBayreuthMap(void) {
         }
         fclose(file);
     }
+    /* Give real OSM roads and houses priority over decorative landmarks. */
+    addLandmarkModels();
     bayreuthVertexCount=vertexCount;
     if(bayreuthVertexCount>MAX_MAP_VERTICES) bayreuthVertexCount=MAX_MAP_VERTICES;
     memcpy(bayreuthVertices,vertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
