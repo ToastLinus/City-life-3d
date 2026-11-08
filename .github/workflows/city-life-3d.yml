@@ -1,5 +1,10 @@
 name: Build CITY LIFE 3D
 
+# Avoid duplicate long-running map downloads when several commits arrive close together.
+concurrency:
+  group: city-life-3d-main-build
+  cancel-in-progress: true
+
 on:
   push:
     branches:
