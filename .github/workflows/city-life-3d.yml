@@ -144,7 +144,7 @@ jobs:
             git clone --depth 1 --branch v1.2.6 https://github.com/dnasdw/3dstool.git /tmp/3dstool-src
             cmake -S /tmp/3dstool-src -B /tmp/3dstool-src/build -DUSE_DEP=OFF
             cmake --build /tmp/3dstool-src/build --parallel 2
-            find /tmp/3dstool-src/build -type f -name 3dstool -exec cp {} /tmp/3dstool/3dstool \;
+            test -x /tmp/3dstool-src/bin/Release/3dstool && cp /tmp/3dstool-src/bin/Release/3dstool /tmp/3dstool/3dstool
           fi
           TOOL="$(find /tmp/3dstool -type f -name 3dstool | head -n 1)"
           test -n "$TOOL"
