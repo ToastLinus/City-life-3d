@@ -275,16 +275,35 @@ static void addInteriorScene(void) {
         }
         for(int row=0;row<3;row++) {
             float z=-3.0f+(float)row*4.0f;
-            box(-4.8f,.0f,z,1.0f,1.65f,3.0f,.72f,.48f,.25f);
-            box(-4.8f,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
-            box(-4.8f,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
-            box(0,.0f,z,1.0f,1.65f,3.0f,.26f,.48f,.68f);
-            box(0,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
-            box(0,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
-            box(4.8f,.0f,z,1.0f,1.65f,3.0f,.72f,.48f,.25f);
-            box(4.8f,.55f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
-            box(4.8f,1.10f,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+            float aisleX[3]={-4.8f,0.0f,4.8f};
+            float shelfColor[3][3]={{.72f,.48f,.25f},{.26f,.48f,.68f},{.72f,.48f,.25f}};
+            for(int aisle=0;aisle<3;aisle++) {
+                float x=aisleX[aisle];
+                box(x,.0f,z,1.0f,1.65f,3.0f,shelfColor[aisle][0],shelfColor[aisle][1],shelfColor[aisle][2]);
+                for(int level=0;level<3;level++) {
+                    float sy=.34f+(float)level*.48f;
+                    box(x,sy,z,1.12f,.09f,3.1f,.90f,.88f,.82f);
+                    for(int item=0;item<4;item++) {
+                        float pz=z-1.15f+(float)item*.72f;
+                        float pr=(item+aisle+level)%3==0?.82f:((item+level)%2==0?.22f:.90f);
+                        float pg=(item+aisle)%2==0?.34f:.68f;
+                        float pb=(level+item)%2==0?.18f:.72f;
+                        box(x-.18f,sy+.12f,pz,.24f,.25f,.28f,pr,pg,pb);
+                        box(x+.18f,sy+.12f,pz,.24f,.25f,.28f,pb,pr,pg);
+                    }
+                }
+            }
         }
+        /* Fresh-produce island and refrigerated cabinets along the rear wall. */
+        for(int i=0;i<4;i++) {
+            float x=-7.5f+(float)i*5.0f;
+            box(x,.0f,8.7f,2.6f,1.0f,1.0f,.38f,.30f,.20f);
+            for(int j=0;j<3;j++) box(x-0.7f+(float)j*.7f,.82f,8.7f,.42f,.28f,.42f,
+                                      j==0?.86f:.30f,j==1?.72f:.82f,j==2?.18f:.28f);
+        }
+        box(10.8f,1.35f,-1.0f,1.4f,2.6f,7.0f,.72f,.82f,.84f);
+        box(10.05f,1.35f,-1.0f,.08f,2.35f,6.6f,.22f,.62f,.76f);
+        for(int i=0;i<5;i++) box(10.0f,1.0f,-3.4f+(float)i*1.2f,.10f,.16f,.65f,.88f,.90f,.92f);
         for(int i=0;i<3;i++) {
             float x=-5.0f+(float)i*5.0f;
             box(x,.0f,7.0f,3.4f,.95f,1.0f,.20f,.24f,.27f);
@@ -297,21 +316,61 @@ static void addInteriorScene(void) {
         box(0,0,-11.3f,37.0f,4.5f,.35f,.82f,.83f,.82f);
         box(-16.0f,0,11.3f,4.0f,4.5f,.35f,.82f,.83f,.82f);
         box(16.0f,0,11.3f,4.0f,4.5f,.35f,.82f,.83f,.82f);
-        for(int shop=0;shop<3;shop++) {
-            float cx=-11.5f+(float)shop*11.5f;
-            box(cx,0,-7.8f,10.0f,3.5f,.25f,.55f,.57f,.60f);
-            box(cx,0,-3.2f,.25f,3.5f,9.0f,.55f,.57f,.60f);
-            box(cx,2.6f,-5.5f,8.5f,.65f,.20f,shop==0?.12f:(shop==1?.12f:.72f),shop==0?.35f:(shop==1?.52f:.22f),shop==0?.68f:(shop==1?.76f:.18f));
+        /* Four separate shop fronts, each with a distinct display and fascia. */
+        for(int shop=0;shop<4;shop++) {
+            float cx=-13.2f+(float)shop*8.8f;
+            float sr=shop==0?.12f:(shop==1?.12f:(shop==2?.72f:.18f));
+            float sg=shop==0?.35f:(shop==1?.52f:(shop==2?.22f:.58f));
+            float sb=shop==0?.68f:(shop==1?.76f:(shop==2?.18f:.38f));
+            box(cx,0,-7.8f,8.0f,3.5f,.25f,.55f,.57f,.60f);
+            box(cx,2.65f,-7.55f,7.4f,.62f,.18f,sr,sg,sb);
+            box(cx-4.0f,0,-5.5f,.22f,3.5f,4.7f,.55f,.57f,.60f);
+            box(cx+4.0f,0,-5.5f,.22f,3.5f,4.7f,.55f,.57f,.60f);
+            /* Glass shop window and a clearly visible entrance opening. */
+            box(cx-2.45f,1.25f,-7.62f,2.5f,2.25f,.08f,.24f,.57f,.70f);
+            box(cx+2.45f,1.25f,-7.62f,2.5f,2.25f,.08f,.24f,.57f,.70f);
+            box(cx,1.05f,-7.62f,.10f,2.1f,.10f,.82f,.84f,.82f);
             if(shop==0) {
-                for(int i=0;i<3;i++) box(cx-2.8f+(float)i*2.8f,.0f,-7.0f,1.6f,1.1f,1.5f,.38f,.30f,.22f);
+                /* Fashion shop: display rails and colourful clothing. */
+                box(cx,1.65f,-6.9f,5.5f,.10f,.12f,.72f,.74f,.76f);
+                for(int i=0;i<6;i++) box(cx-2.3f+(float)i*.92f,.75f,-6.9f,.48f,1.45f,.28f,
+                                         i%3==0?.82f:(i%3==1?.18f:.88f),.34f,.48f);
             } else if(shop==1) {
+                /* Electronics shop: counters, screens and product plinths. */
                 for(int i=0;i<3;i++) {
-                    box(cx-2.8f+(float)i*2.8f,.0f,-7.0f,1.0f,2.0f,1.0f,.28f,.42f,.62f);
-                    box(cx-2.8f+(float)i*2.8f,1.0f,-6.45f,.9f,.08f,.08f,.92f,.92f,.88f);
+                    float px=cx-2.5f+(float)i*2.5f;
+                    box(px,.0f,-6.9f,1.55f,.95f,1.15f,.28f,.32f,.36f);
+                    box(px,.95f,-6.30f,1.18f,.82f,.08f,.12f,.20f,.26f);
+                    box(px,1.0f,-6.24f,.98f,.62f,.035f,.20f,.58f,.76f);
+                }
+            } else if(shop==2) {
+                /* Toy and gifts shop with colourful shelf stock. */
+                for(int row=0;row<2;row++) for(int i=0;i<5;i++) {
+                    float px=cx-2.8f+(float)i*1.4f;
+                    box(px,.35f+(float)row*.95f,-6.9f,1.05f,.72f,.72f,.68f,.48f,.24f);
+                    box(px,.40f+(float)row*.95f,-6.48f,.55f,.42f,.08f,.90f,.72f,.18f);
                 }
             } else {
-                for(int i=0;i<4;i++) box(cx-3.2f+(float)i*2.1f,.0f,-7.2f,1.3f,1.3f,.65f,.70f,.36f,.22f);
+                /* Café: service counter, tables and seats. */
+                box(cx,0,-6.8f,5.8f,1.0f,1.0f,.48f,.27f,.16f);
+                for(int i=0;i<3;i++) {
+                    float px=cx-2.0f+(float)i*2.0f;
+                    box(px,.85f,-6.8f,.72f,.72f,.72f,.72f,.28f,.18f);
+                    box(px,1.55f,-6.8f,.95f,.10f,.95f,.60f,.34f,.20f);
+                }
             }
+        }
+        /* Bright atrium lighting, planters and seating along the public mall walk. */
+        for(int i=0;i<6;i++) {
+            float x=-14.0f+(float)i*5.6f;
+            box(x,3.9f,0.0f,2.4f,.10f,.65f,.96f,.91f,.70f);
+            box(x,.0f,1.2f,.72f,.48f,.72f,.28f,.20f,.12f);
+            tree(x,1.2f);
+        }
+        for(int i=0;i<3;i++) {
+            float x=-10.0f+(float)i*10.0f;
+            box(x,.38f,8.0f,2.8f,.16f,.7f,.48f,.28f,.14f);
+            box(x,.78f,8.0f,2.8f,.12f,.7f,.32f,.19f,.10f);
         }
         for(int i=0;i<4;i++) {
             float x=-12.0f+(float)i*8.0f;
