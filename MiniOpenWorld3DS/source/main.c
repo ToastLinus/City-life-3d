@@ -811,16 +811,16 @@ int main(void) {
             if(down&KEY_LEFT) menuSelection=(menuSelection+3)%4;
             if(down&KEY_RIGHT) menuSelection=(menuSelection+1)%4;
             consoleClear();
-            printf("\\x1b[1;1H       CITY LIFE 3D");
-            printf("\\x1b[3;1H   STARTORT AUSWAEHLEN");
-            printf("\\x1b[5;1H   HOCH / RUNTER: ORT");
-            printf("\\x1b[7;1H   %s ROTMAIN-CENTER",locationSelection==0?">":" ");
-            printf("\\x1b[8;1H   %s HOFGARTEN",locationSelection==1?">":" ");
-            printf("\\x1b[9;1H   %s LIDL / ROTER HUEGEL",locationSelection==2?">":" ");
-            printf("\\x1b[10;1H   %s UNTERPREUSCHWITZ",locationSelection==3?">":" ");
-            printf("\\x1b[13;1H   FARBE LINKS / RECHTS");
-            printf("\\x1b[14;1H   %s",menuSelection==0?"BLAU":(menuSelection==1?"LILA":(menuSelection==2?"GRUEN":"ORANGE")));
-            printf("\\x1b[16;1H       A: SPIELEN");
+            printf("\x1b[1;1H       CITY LIFE 3D");
+            printf("\x1b[3;1H   STARTORT AUSWAEHLEN");
+            printf("\x1b[5;1H   HOCH / RUNTER: ORT");
+            printf("\x1b[7;1H   %s ROTMAIN-CENTER",locationSelection==0?">":" ");
+            printf("\x1b[8;1H   %s HOFGARTEN",locationSelection==1?">":" ");
+            printf("\x1b[9;1H   %s LIDL / ROTER HUEGEL",locationSelection==2?">":" ");
+            printf("\x1b[10;1H   %s UNTERPREUSCHWITZ",locationSelection==3?">":" ");
+            printf("\x1b[13;1H   FARBE LINKS / RECHTS");
+            printf("\x1b[14;1H   %s",menuSelection==0?"BLAU":(menuSelection==1?"LILA":(menuSelection==2?"GRUEN":"ORANGE")));
+            printf("\x1b[16;1H       A: SPIELEN");
             if(down&KEY_A) {
                 playerX=locationSpawn[locationSelection][0];
                 playerZ=locationSpawn[locationSelection][1];
