@@ -12,6 +12,9 @@ import sys
 import urllib.request
 
 TILE_SIZE = 256.0
+# Must match build_bayreuth_tiles.py and the landmark coordinates in main.c.
+ORIGIN_LAT = 49.9422116
+ORIGIN_LON = 11.5793568
 SAMPLES = 9
 MAGIC = b"BTH1"
 HEADER = struct.Struct("<4sHHfI")
@@ -56,8 +59,9 @@ def main():
     if not points:
         raise RuntimeError("No OSM coordinates available to align the elevation grid")
 
-    origin_lon = sum(p[0] for p in points) / len(points)
-    origin_lat = sum(p[1] for p in points) / len(points)
+    # Keep terrain tiles aligned with the map and fixed landmark positions.
+    origin_lon = ORIGIN_LON
+    origin_lat = ORIGIN_LAT
     # Match the map converter: include every tile touched by each feature's
     # bounding box, not just the tiles containing its individual vertices.
     for feature in document.get("features", []):
