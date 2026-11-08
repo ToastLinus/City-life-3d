@@ -32,7 +32,7 @@ BBOXES = [
 def query_for_bbox(bbox):
     south, west, north, east = bbox
     box = f"{south},{west},{north},{east}"
-    return f\"\"\"
+    return f"""
 [out:json][timeout:60];
 (
   way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"]({box});
