@@ -696,7 +696,7 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float mx=(x0+x1)*.5f-playerX,mz=(z0+z1)*.5f-playerZ;
             if(mx*mx+mz*mz>42.0f*42.0f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
-            if(vertexCount+6>MAX_MAP_VERTICES) return -1;
+            if(vertexCount+6>4600) return 0;
             float y0=terrainHeight(x0,z0)+.055f,y1=terrainHeight(x1,z1)+.055f;
             quad(V(x0+ox,y0,z0+oz,.19f,.20f,.22f),V(x1+ox,y1,z1+oz,.19f,.20f,.22f),V(x1-ox,y1,z1-oz,.19f,.20f,.22f),V(x0-ox,y0,z0-oz,.19f,.20f,.22f));
         }
@@ -725,14 +725,14 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
             float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
-            if(vertexCount+3>MAX_MAP_VERTICES) return -1;
+            if(vertexCount+3>MAX_MAP_VERTICES) return 0;
             tri(V(ax,terrainHeight(ax,az)+4.0f,az,.34f,.24f,.19f),V(px,terrainHeight(px,pz)+4.0f,pz,.40f,.29f,.22f),V(qx,terrainHeight(qx,qz)+4.0f,qz,.31f,.21f,.17f));
         }
         for(uint16_t i=0;i<count;i++) {
             uint16_t j=(uint16_t)((i+1)%count);
             float ax=bx+(float)points[i].x_quarter_m*.25f,az=bz+(float)points[i].z_quarter_m*.25f;
             float px=bx+(float)points[j].x_quarter_m*.25f,pz=bz+(float)points[j].z_quarter_m*.25f;
-            if(vertexCount+6>MAX_MAP_VERTICES) return -1;
+            if(vertexCount+6>MAX_MAP_VERTICES) return 0;
             float ay=terrainHeight(ax,az),py=terrainHeight(px,pz);
             quad(V(ax,ay,az,.76f,.68f,.52f),V(px,py,pz,.76f,.68f,.52f),V(px,py+4.0f,pz,.86f,.79f,.64f),V(ax,ay+4.0f,az,.86f,.79f,.64f));
         }
