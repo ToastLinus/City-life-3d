@@ -64,6 +64,10 @@ def fetch():
                     )
                 if payload.get("remark"):
                     raise RuntimeError(payload["remark"])
+                # Some Overpass mirrors return HTTP 200 with only the boundary
+                # relation and silently omit the requested ways when overloaded.
+                # Validate the actual map payload here so the next provider is tried.
+                build_features(payload)
                 return payload
             except Exception as exc:
                 last_error = exc
