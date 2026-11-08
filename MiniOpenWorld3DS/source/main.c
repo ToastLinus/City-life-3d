@@ -7,8 +7,8 @@
 #include "bayreuth_tiles.h"
 
 #define XFER (GX_TRANSFER_FLIP_VERT(0)|GX_TRANSFER_OUT_TILED(0)|GX_TRANSFER_RAW_COPY(0)|GX_TRANSFER_IN_FORMAT(GX_TRANSFER_FMT_RGBA8)|GX_TRANSFER_OUT_FORMAT(GX_TRANSFER_FMT_RGB8)|GX_TRANSFER_SCALING(GX_TRANSFER_SCALE_NO))
-#define MAX_VERTICES 18000
-#define MAX_MAP_VERTICES 12000
+#define MAX_VERTICES 10000
+#define MAX_MAP_VERTICES 7000
 
 typedef struct { float x,y,z,r,g,b,a; } Vtx;
 typedef struct { float x,y,z; } Pos;
@@ -104,7 +104,7 @@ static touchPosition previousTouch;
 static s16 *soundSamples=NULL;
 static ndspWaveBuf soundWave;
 static int audioReady=0;
-static int menuSelection=0, gameStarted=0;
+static int menuSelection=0, gameStarted=0, spawnChecked=0;
 static const float playerPalette[4][3]={{.12f,.40f,.92f},{.68f,.22f,.86f},{.12f,.72f,.42f},{.94f,.48f,.12f}};
 #define MAX_BUILDING_COLLIDERS 512
 typedef struct { float minX,maxX,minZ,maxZ; } BuildingCollider;
@@ -603,7 +603,7 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float dx=x1-x0,dz=z1-z0,len=sqrtf(dx*dx+dz*dz);
             if(len<.05f) continue;
             float mx=(x0+x1)*.5f-playerX,mz=(z0+z1)*.5f-playerZ;
-            if(mx*mx+mz*mz>78.0f*78.0f) continue;
+            if(mx*mx+mz*mz>42.0f*42.0f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             float y0=terrainHeight(x0,z0)+.055f,y1=terrainHeight(x1,z1)+.055f;
@@ -624,7 +624,7 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             BuildingCollider *bc=&buildingColliders[buildingColliderCount++];
             bc->minX=minX; bc->maxX=maxX; bc->minZ=minZ; bc->maxZ=maxZ;
         }
-        if(cx*cx+cz*cz>78.0f*78.0f) return 0;
+        if(cx*cx+cz*cz>42.0f*42.0f) return 0;
         /* Replace the two most recognizable shop footprints with hand-built models. */
         float worldCx=cx+playerX,worldCz=cz+playerZ;
         if(landmarkNear(worldCx,worldCz,-690.4f,400.6f,48.0f) ||
@@ -910,6 +910,23 @@ int main(void) {
         }
 
         if(!interiorMode && (!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ)) rebuildBayreuthMap();
+        if(!interiorMode && bayreuthReady && !spawnChecked) {
+            spawnChecked=1;
+            if(hitsBuilding(playerX,playerZ,0.8f)) {
+                int found=0;
+                for(int ring=1;ring<=16 && !found;ring++) {
+                    float radius=(float)ring*2.0f;
+                    for(int step=0;step<24;step++) {
+                        float angle=(float)step*6.2831853f/24.0f;
+                        float testX=78.3f+cosf(angle)*radius;
+                        float testZ=-260.7f+sinf(angle)*radius;
+                        if(!hitsBuilding(testX,testZ,0.8f)) {
+                            playerX=testX; playerZ=testZ; found=1; break;
+                        }
+                    }
+                }
+            }
+        }
         vertexCount=(!interiorMode && bayreuthReady)?bayreuthVertexCount:0;
         if(interiorMode) addInteriorScene();
         else if(!bayreuthReady) box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
