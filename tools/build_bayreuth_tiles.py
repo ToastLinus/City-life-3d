@@ -22,6 +22,9 @@ from collections import defaultdict
 MAGIC = b"BT3D"
 VERSION = 1
 DEFAULT_TILE_SIZE = 256.0
+# Keep the same fixed Bayreuth origin as the landmark positions in main.c.
+ORIGIN_LAT = 49.9422116
+ORIGIN_LON = 11.5793568
 HEADER = struct.Struct("<4sHHddfI")
 TILE_HEADER = struct.Struct("<iiI")
 FEATURE_HEADER = struct.Struct("<BBH")
@@ -69,8 +72,10 @@ def convert(document, tile_size=DEFAULT_TILE_SIZE):
     if not all_points:
         raise ValueError("GeoJSON contains no supported road/building geometry")
 
-    origin_lon = sum(p[0] for p in all_points) / len(all_points)
-    origin_lat = sum(p[1] for p in all_points) / len(all_points)
+    # A fixed origin keeps custom landmark coordinates stable when the map
+    # is restricted to the four requested neighborhoods.
+    origin_lon = ORIGIN_LON
+    origin_lat = ORIGIN_LAT
     tiles = defaultdict(list)
     for kind, geographic_points in parsed:
         local = [project(lon, lat, origin_lon, origin_lat)
