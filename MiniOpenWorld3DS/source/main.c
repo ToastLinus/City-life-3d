@@ -802,6 +802,7 @@ int main(void) {
         vertexCount=(!interiorMode && bayreuthReady)?bayreuthVertexCount:0;
         if(interiorMode) addInteriorScene();
         else if(!bayreuthReady) box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
+        if(!interiorMode) {
         { int start=vertexCount; person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[0],npcZ[0])); }
         { int start=vertexCount; person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[1],npcZ[1])); }
         { int start=vertexCount; person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[2],npcZ[2])); }
@@ -823,6 +824,7 @@ int main(void) {
         { int start=vertexCount; vehicle(trafficCar2X,trafficCar2Z,.20f,.48f,.78f); liftNewVertices(start,terrainHeight(trafficCar2X,trafficCar2Z)); }
         carX=savedCarX; carZ=savedCarZ; carYaw=savedCarYaw;
         vehicleStyle=savedStyle;
+        }
         { int start=vertexCount; if(!riding) person(playerX,playerZ,.12f,.40f,.92f,0.0f,playerJump,playerYaw); liftNewVertices(start,terrainHeight(playerX,playerZ)); }
         uploadVertices();
 
