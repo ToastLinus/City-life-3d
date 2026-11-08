@@ -81,3 +81,60 @@ def fetch():
             print(f"Overpass provider failed: {endpoint}: {exc}", file=sys.stderr)
     raise RuntimeError(f"Could not fetch the four Bayreuth areas: {last_error}")
 
+
+def build_features(payload):
+    """Convert Overpass ways into the road/building GeoJSON consumed by the tile builder."""
+    features = []
+    for element in payload.get("elements", []):
+        if element.get("type") != "way":
+            continue
+        tags = element.get("tags") or {}
+        geometry = element.get("geometry") or []
+        coordinates = [[float(p["lon"]), float(p["lat"])]
+                       for p in geometry if "lon" in p and "lat" in p]
+        if len(coordinates) < 2:
+            continue
+        if tags.get("highway"):
+            features.append({
+                "type": "Feature",
+                "properties": {"kind": "road", "highway": tags["highway"]},
+                "geometry": {"type": "LineString", "coordinates": coordinates},
+            })
+        elif tags.get("building"):
+            if len(coordinates) < 4:
+                continue
+            if coordinates[0] != coordinates[-1]:
+                coordinates.append(coordinates[0])
+            features.append({
+                "type": "Feature",
+                "properties": {"kind": "building", "building": tags.get("building", "yes")},
+                "geometry": {"type": "Polygon", "coordinates": [coordinates]},
+            })
+    if not features:
+        raise RuntimeError("Overpass response contained no usable road/building ways")
+    return features, {
+        "roads": sum(f["properties"]["kind"] == "road" for f in features),
+        "buildings": sum(f["properties"]["kind"] == "building" for f in features),
+    }
+
+
+def main():
+    if len(sys.argv) != 2:
+        raise SystemExit("Usage: python3 tools/fetch_bayreuth_map.py output.geojson")
+    payload = fetch()
+    features, counts = build_features(payload)
+    document = {
+        "type": "FeatureCollection",
+        "generator": "CITY LIFE 3D / OpenStreetMap",
+        "attribution": "© OpenStreetMap contributors",
+        "features": features,
+    }
+    with open(sys.argv[1], "w", encoding="utf-8") as output:
+        json.dump(document, output, separators=(",", ":"))
+    print("Wrote {} features ({} roads, {} buildings) to {}".format(
+        len(features), counts["roads"], counts["buildings"], sys.argv[1]
+    ))
+
+
+if __name__ == "__main__":
+    main()
