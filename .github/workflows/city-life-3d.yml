@@ -121,9 +121,18 @@ jobs:
           chmod +x "$MAKEROM"
       - name: Install 3dstool
         run: |
-          curl --fail --location --retry 6 --retry-all-errors --retry-delay 3 --connect-timeout 20 https://github.com/dnasdw/3dstool/releases/download/v1.2.6/3dstool_linux_x86_64.tar.gz -o /tmp/3dstool.tar.gz
           mkdir -p /tmp/3dstool
-          tar -xzf /tmp/3dstool.tar.gz -C /tmp/3dstool
+          if curl --fail --location --retry 3 --retry-all-errors --retry-delay 3 --connect-timeout 20 https://github.com/dnasdw/3dstool/releases/download/v1.2.6/3dstool_linux_x86_64.tar.gz -o /tmp/3dstool.tar.gz; then
+            tar -xzf /tmp/3dstool.tar.gz -C /tmp/3dstool
+          else
+            echo "Prebuilt download unavailable; compiling 3dstool v1.2.6 from source."
+            sudo apt-get update
+            sudo apt-get install -y cmake libssl-dev libcurl4-openssl-dev
+            git clone --depth 1 --branch v1.2.6 https://github.com/dnasdw/3dstool.git /tmp/3dstool-src
+            cmake -S /tmp/3dstool-src -B /tmp/3dstool-src/build -DUSE_DEP=OFF
+            cmake --build /tmp/3dstool-src/build --parallel 2
+            find /tmp/3dstool-src/build -type f -name 3dstool -exec cp {} /tmp/3dstool/3dstool \;
+          fi
           TOOL="$(find /tmp/3dstool -type f -name 3dstool | head -n 1)"
           test -n "$TOOL"
           chmod +x "$TOOL"
