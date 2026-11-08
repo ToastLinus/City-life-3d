@@ -19,7 +19,7 @@ ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
-# Keep the four requested areas as separate, smaller Overpass requests.
+# Precise bounding boxes for the four requested areas.
 BBOXES = [
     (49.9378, 11.5597, 49.9538, 11.5797),  # Rotmain-Center / Hofgarten
     (49.9329, 11.5715, 49.9469, 11.5895),  # Lidl / Roter Hügel
@@ -41,7 +41,7 @@ def query_for_areas():
             f'way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"]({box});',
             f'way["building"]({box});',
         ])
-    return "[out:json][timeout:45];\\n(\\n" + "\\n".join(clauses) + "\\n);\\nout body geom;\\n"
+    return "[out:json][timeout:45];\n(\n" + "\n".join(clauses) + "\n);\nout body geom;\n"
 
 
 def decode_response(raw, content_encoding=""):
