@@ -24,13 +24,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install terrain converter dependency
-        run: python3 -m pip install rasterio
-      - name: Fetch and prepare Bayreuth map and terrain
+      # Reuse the expensive OSM and elevation downloads across code-only builds.
+      - name: Restore prepared Bayreuth map cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            bayreuth-osm.geojson
+            bayreuth-tiles.bin
+            bayreuth-dem.bin
+          key: city-life-map-v1-${{ hashFiles('tools/fetch_bayreuth_map.py', 'tools/build_bayreuth_tiles.py', 'tools/fetch_bayreuth_dem.py') }}
+      - name: Prepare Bayreuth map and terrain when cache is missing
         run: |
-          python3 tools/fetch_bayreuth_map.py bayreuth-osm.geojson
-          python3 tools/build_bayreuth_tiles.py bayreuth-osm.geojson bayreuth-tiles.bin
-          python3 tools/fetch_bayreuth_dem.py bayreuth-osm.geojson bayreuth-dem.bin
+          if [ -s bayreuth-osm.geojson ] && [ -s bayreuth-tiles.bin ] && [ -s bayreuth-dem.bin ]; then
+            echo "Using cached Bayreuth map and terrain."
+          else
+            python3 -m pip install rasterio
+            python3 tools/fetch_bayreuth_map.py bayreuth-osm.geojson
+            python3 tools/build_bayreuth_tiles.py bayreuth-osm.geojson bayreuth-tiles.bin
+            python3 tools/fetch_bayreuth_dem.py bayreuth-osm.geojson bayreuth-dem.bin
+          fi
       - name: Upload map assets
         uses: actions/upload-artifact@v4
         with:
