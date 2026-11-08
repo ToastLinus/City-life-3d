@@ -21,13 +21,16 @@ ENDPOINTS = [
     "https://overpass.kumi.systems/api/interpreter",
 ]
 QUERY = r"""
-[out:json][timeout:180];
-rel["name"="Bayreuth"]["boundary"="administrative"]->.cityrel;
-.cityrel map_to_area -> .city;
-.cityrel out tags;
+[out:json][timeout:90];
 (
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](area.city);
-  way["building"](area.city);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9378,11.5597,49.9538,11.5797);
+  way["building"](49.9378,11.5597,49.9538,11.5797);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9329,11.5715,49.9469,11.5895);
+  way["building"](49.9329,11.5715,49.9469,11.5895);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9443,11.5374,49.9583,11.5554);
+  way["building"](49.9443,11.5374,49.9583,11.5554);
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|pedestrian|track|cycleway|footway|path)$"](49.9482,11.5201,49.9602,11.5361);
+  way["building"](49.9482,11.5201,49.9602,11.5361);
 );
 out body geom;
 """
@@ -102,19 +105,6 @@ def valid_point(point):
 def build_features(payload):
     """Convert Overpass ways to conservative, valid GeoJSON features."""
     elements = payload.get("elements", [])
-    city_areas = [
-        e for e in elements
-        if e.get("type") == "relation"
-        and e.get("tags", {}).get("name") == "Bayreuth"
-        and e.get("tags", {}).get("boundary") == "administrative"
-        and e.get("tags", {}).get("admin_level") in ("6", "8")
-    ]
-    if not city_areas:
-        raise RuntimeError(
-            "The Bayreuth administrative area did not resolve on this Overpass "
-            "server. No guessed rectangle will be used."
-        )
-
     features = []
     seen = set()
     for element in elements:
@@ -175,7 +165,7 @@ def build_features(payload):
             "Bayreuth resolved, but Overpass returned no valid road/building "
             "ways. Refusing to write an empty map."
         )
-    return features, city_areas[0]
+    return features, {"name": "Rotmain-Center, Hofgarten, Lidl Meranierring, Unterpreuschwitz"}
 
 
 def main():
@@ -186,10 +176,10 @@ def main():
     buildings = len(features) - roads
     document = {
         "type": "FeatureCollection",
-        "name": "Bayreuth municipal road and building geometry",
+        "name": "Four target areas in Bayreuth: Rotmain-Center, Hofgarten, Lidl Meranierring, Unterpreuschwitz",
         "source": "© OpenStreetMap contributors",
         "license": "Open Database License (ODbL)",
-        "area_osm_id": city_area.get("id"),
+        "target_areas": city_area.get("name"),
         "osm_timestamp": payload.get("osm3s", {}).get("timestamp_osm_base"),
         "feature_count": len(features),
         "road_way_count": roads,
