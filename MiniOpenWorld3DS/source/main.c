@@ -104,8 +104,12 @@ static touchPosition previousTouch;
 static s16 *soundSamples=NULL;
 static ndspWaveBuf soundWave;
 static int audioReady=0;
-static int menuSelection=0, gameStarted=0, spawnChecked=0;
+static int menuSelection=0, locationSelection=0, gameStarted=0, spawnChecked=0;
 static const float playerPalette[4][3]={{.12f,.40f,.92f},{.68f,.22f,.86f},{.12f,.72f,.42f},{.94f,.48f,.12f}};
+static const char *locationNames[4]={"ROTMAIN-CENTER","HOFGARTEN","LIDL AM ROTEN HUEGEL","UNTERPREUSCHWITZ"};
+static const float locationSpawn[4][2]={
+    {-690.4f,350.0f}, {78.3f,-260.7f}, {-2357.7f,980.0f}, {-3650.0f,1295.0f}
+};
 #define MAX_BUILDING_COLLIDERS 512
 typedef struct { float minX,maxX,minZ,maxZ; } BuildingCollider;
 static BuildingCollider buildingColliders[MAX_BUILDING_COLLIDERS];
@@ -802,18 +806,28 @@ int main(void) {
         hidScanInput();
         u32 keys=hidKeysHeld(), down=hidKeysDown();
         if(!gameStarted) {
+            if(down&KEY_UP) locationSelection=(locationSelection+3)%4;
+            if(down&KEY_DOWN) locationSelection=(locationSelection+1)%4;
             if(down&KEY_LEFT) menuSelection=(menuSelection+3)%4;
             if(down&KEY_RIGHT) menuSelection=(menuSelection+1)%4;
             consoleClear();
-            printf("\x1b[1;1H       CITY LIFE 3D");
-            printf("\x1b[3;1H   SPIELERFARBE AUSWAEHLEN");
-            printf("\x1b[5;1H   <  LINKS / RECHTS  >");
-            printf("\x1b[7;1H   %s BLAU",menuSelection==0?">":" ");
-            printf("\x1b[8;1H   %s LILA",menuSelection==1?">":" ");
-            printf("\x1b[9;1H   %s GRUEN",menuSelection==2?">":" ");
-            printf("\x1b[10;1H   %s ORANGE",menuSelection==3?">":" ");
-            printf("\x1b[13;1H       A: SPIELEN");
-            if(down&KEY_A) { gameStarted=1; consoleClear(); }
+            printf("\\x1b[1;1H       CITY LIFE 3D");
+            printf("\\x1b[3;1H   STARTORT AUSWAEHLEN");
+            printf("\\x1b[5;1H   HOCH / RUNTER: ORT");
+            printf("\\x1b[7;1H   %s ROTMAIN-CENTER",locationSelection==0?">":" ");
+            printf("\\x1b[8;1H   %s HOFGARTEN",locationSelection==1?">":" ");
+            printf("\\x1b[9;1H   %s LIDL / ROTER HUEGEL",locationSelection==2?">":" ");
+            printf("\\x1b[10;1H   %s UNTERPREUSCHWITZ",locationSelection==3?">":" ");
+            printf("\\x1b[13;1H   FARBE LINKS / RECHTS");
+            printf("\\x1b[14;1H   %s",menuSelection==0?"BLAU":(menuSelection==1?"LILA":(menuSelection==2?"GRUEN":"ORANGE")));
+            printf("\\x1b[16;1H       A: SPIELEN");
+            if(down&KEY_A) {
+                playerX=locationSpawn[locationSelection][0];
+                playerZ=locationSpawn[locationSelection][1];
+                spawnChecked=0;
+                gameStarted=1;
+                consoleClear();
+            }
             C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
             C3D_RenderTargetClear(target,C3D_CLEAR_ALL,0x78BDEBFF,0);
             C3D_FrameDrawOn(target);
@@ -951,12 +965,14 @@ int main(void) {
             spawnChecked=1;
             if(hitsBuilding(playerX,playerZ,0.8f)) {
                 int found=0;
+                float spawnX=locationSpawn[locationSelection][0];
+                float spawnZ=locationSpawn[locationSelection][1];
                 for(int ring=1;ring<=16 && !found;ring++) {
                     float radius=(float)ring*2.0f;
                     for(int step=0;step<24;step++) {
                         float angle=(float)step*6.2831853f/24.0f;
-                        float testX=78.3f+cosf(angle)*radius;
-                        float testZ=-260.7f+sinf(angle)*radius;
+                        float testX=spawnX+cosf(angle)*radius;
+                        float testZ=spawnZ+sinf(angle)*radius;
                         if(!hitsBuilding(testX,testZ,0.8f)) {
                             playerX=testX; playerZ=testZ; found=1; break;
                         }
