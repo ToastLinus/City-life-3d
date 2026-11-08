@@ -20,6 +20,7 @@ static Vtx bayreuthVertices[MAX_MAP_VERTICES];
 static int bayreuthVertexCount=0;
 static int bayreuthTileX=999999, bayreuthTileZ=999999;
 static int bayreuthReady=0;
+static int bayreuthGpuDirty=1;
 #define TERRAIN_SAMPLES 9
 typedef struct { int32_t x,z; float h[81]; } TerrainTile;
 static TerrainTile terrainTiles[9];
@@ -392,6 +393,8 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float z1=(float)tz*256.0f+(float)points[i].z_quarter_m*.25f;
             float dx=x1-x0,dz=z1-z0,len=sqrtf(dx*dx+dz*dz);
             if(len<.05f) continue;
+            float mx=(x0+x1)*.5f-playerX,mz=(z0+z1)*.5f-playerZ;
+            if(mx*mx+mz*mz>125.0f*125.0f) continue;
             float ox=-dz/len*2.6f,oz=dx/len*2.6f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             float y0=terrainHeight(x0,z0)+.055f,y1=terrainHeight(x1,z1)+.055f;
@@ -399,6 +402,10 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
         }
     } else if(kind==BT3D_KIND_BUILDING && count>=3) {
         float bx=(float)tx*256.0f,bz=(float)tz*256.0f;
+        float cx=0.0f,cz=0.0f;
+        for(uint16_t i=0;i<count;i++){cx+=(float)points[i].x_quarter_m*.25f;cz+=(float)points[i].z_quarter_m*.25f;}
+        cx=cx/(float)count+bx-playerX; cz=cz/(float)count+bz-playerZ;
+        if(cx*cx+cz*cz>125.0f*125.0f) return 0;
         for(uint16_t i=1;i+1<count;i++) {
             float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
@@ -435,18 +442,38 @@ static void rebuildBayreuthMap(void) {
     bayreuthVertexCount=vertexCount;
     if(bayreuthVertexCount>MAX_MAP_VERTICES) bayreuthVertexCount=MAX_MAP_VERTICES;
     memcpy(bayreuthVertices,vertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
-    vertexCount=saved; bayreuthReady=(bayreuthVertexCount>0);
+    vertexCount=saved; bayreuthReady=(bayreuthVertexCount>0); bayreuthGpuDirty=1;
 }
 
 static void uploadVertices(void) {
-    for(int i=0;i<vertexCount;i++) {
+    int mapCount=bayreuthReady?bayreuthVertexCount:0;
+    if(mapCount>MAX_VERTICES) mapCount=MAX_VERTICES;
+    if(bayreuthGpuDirty) {
+        for(int i=0;i<mapCount;i++) {
+            positions[i]=(Pos){bayreuthVertices[i].x,bayreuthVertices[i].y,bayreuthVertices[i].z};
+            colors[i]=(Clr){bayreuthVertices[i].r,bayreuthVertices[i].g,bayreuthVertices[i].b,bayreuthVertices[i].a};
+        }
+        if(mapCount>0) {
+            memcpy(posVbo,positions,(size_t)mapCount*sizeof(Pos));
+            memcpy(colorVbo,colors,(size_t)mapCount*sizeof(Clr));
+            GSPGPU_FlushDataCache(posVbo,(size_t)mapCount*sizeof(Pos));
+            GSPGPU_FlushDataCache(colorVbo,(size_t)mapCount*sizeof(Clr));
+        }
+        bayreuthGpuDirty=0;
+    }
+    if(vertexCount<mapCount) vertexCount=mapCount;
+    for(int i=mapCount;i<vertexCount;i++) {
         positions[i]=(Pos){vertices[i].x,vertices[i].y,vertices[i].z};
         colors[i]=(Clr){vertices[i].r,vertices[i].g,vertices[i].b,vertices[i].a};
     }
-    memcpy(posVbo,positions,vertexCount*sizeof(Pos));
-    memcpy(colorVbo,colors,vertexCount*sizeof(Clr));
-    GSPGPU_FlushDataCache(posVbo,vertexCount*sizeof(Pos));
-    GSPGPU_FlushDataCache(colorVbo,vertexCount*sizeof(Clr));
+    if(vertexCount>mapCount) {
+        size_t offset=(size_t)mapCount;
+        size_t count=(size_t)(vertexCount-mapCount);
+        memcpy((Pos*)posVbo+offset,positions+offset,count*sizeof(Pos));
+        memcpy((Clr*)colorVbo+offset,colors+offset,count*sizeof(Clr));
+        GSPGPU_FlushDataCache((Pos*)posVbo+offset,count*sizeof(Pos));
+        GSPGPU_FlushDataCache((Clr*)colorVbo+offset,count*sizeof(Clr));
+    }
 }
 
 int main(void) {
@@ -611,12 +638,8 @@ int main(void) {
         }
 
         if(!bayreuthReady || (int)floorf(playerX/256.0f)!=bayreuthTileX || (int)floorf(playerZ/256.0f)!=bayreuthTileZ) rebuildBayreuthMap();
-        vertexCount=0;
-        box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
-        if(bayreuthReady && vertexCount+bayreuthVertexCount<MAX_VERTICES) {
-            memcpy(&vertices[vertexCount],bayreuthVertices,(size_t)bayreuthVertexCount*sizeof(Vtx));
-            vertexCount+=bayreuthVertexCount;
-        }
+        vertexCount=bayreuthReady?bayreuthVertexCount:0;
+        if(!bayreuthReady) box(0.0f,-100.0f,0.0f,600.0f,.10f,600.0f,.26f,.58f,.29f);
         { int start=vertexCount; person(npcX[0],npcZ[0],.88f,.46f,.20f,npcWalkPhase[0],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[0],npcZ[0])); }
         { int start=vertexCount; person(npcX[1],npcZ[1],.66f,.30f,.76f,npcWalkPhase[1],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[1],npcZ[1])); }
         { int start=vertexCount; person(npcX[2],npcZ[2],.18f,.58f,.82f,npcWalkPhase[2],0,1.5708f); liftNewVertices(start,terrainHeight(npcX[2],npcZ[2])); }
