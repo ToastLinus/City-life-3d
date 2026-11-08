@@ -670,12 +670,13 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
         float worldCx=cx+playerX,worldCz=cz+playerZ;
         if(landmarkNear(worldCx,worldCz,-690.4f,400.6f,48.0f) ||
            landmarkNear(worldCx,worldCz,-2357.7f,1014.1f,30.0f)) return 0;
+        /* Warm plaster walls and a contrasting roof make houses readable at 3DS scale. */
         for(uint16_t i=1;i+1<count;i++) {
             float ax=bx+(float)points[0].x_quarter_m*.25f,az=bz+(float)points[0].z_quarter_m*.25f;
             float px=bx+(float)points[i].x_quarter_m*.25f,pz=bz+(float)points[i].z_quarter_m*.25f;
             float qx=bx+(float)points[i+1].x_quarter_m*.25f,qz=bz+(float)points[i+1].z_quarter_m*.25f;
             if(vertexCount+3>MAX_MAP_VERTICES) return -1;
-            tri(V(ax,terrainHeight(ax,az)+4.0f,az,.66f,.48f,.34f),V(px,terrainHeight(px,pz)+4.0f,pz,.72f,.55f,.40f),V(qx,terrainHeight(qx,qz)+4.0f,qz,.62f,.44f,.31f));
+            tri(V(ax,terrainHeight(ax,az)+4.0f,az,.34f,.24f,.19f),V(px,terrainHeight(px,pz)+4.0f,pz,.40f,.29f,.22f),V(qx,terrainHeight(qx,qz)+4.0f,qz,.31f,.21f,.17f));
         }
         for(uint16_t i=0;i<count;i++) {
             uint16_t j=(uint16_t)((i+1)%count);
@@ -683,7 +684,16 @@ static int addBayreuthFeature(int32_t tx,int32_t tz,uint8_t kind,const Bt3dPoint
             float px=bx+(float)points[j].x_quarter_m*.25f,pz=bz+(float)points[j].z_quarter_m*.25f;
             if(vertexCount+6>MAX_MAP_VERTICES) return -1;
             float ay=terrainHeight(ax,az),py=terrainHeight(px,pz);
-            quad(V(ax,ay,az,.48f,.39f,.31f),V(px,py,pz,.48f,.39f,.31f),V(px,py+4.0f,pz,.66f,.52f,.39f),V(ax,ay+4.0f,az,.66f,.52f,.39f));
+            quad(V(ax,ay,az,.76f,.68f,.52f),V(px,py,pz,.76f,.68f,.52f),V(px,py+4.0f,pz,.86f,.79f,.64f),V(ax,ay+4.0f,az,.86f,.79f,.64f));
+        }
+        /* Two blue-glass windows and a darker entrance on the street-facing wall. */
+        float width=maxX-minX, depth=maxZ-minZ;
+        float facadeY=terrainHeight((minX+maxX)*.5f,(minZ+maxZ)*.5f);
+        if(width>5.0f && depth>4.0f && vertexCount+180<MAX_MAP_VERTICES) {
+            float windowY=facadeY+1.35f;
+            box(minX+width*.34f,windowY,minZ-.045f,1.15f,1.15f,.10f,.18f,.48f,.62f);
+            box(minX+width*.70f,windowY,minZ-.045f,1.15f,1.15f,.10f,.18f,.48f,.62f);
+            box(minX+width*.52f,facadeY+.05f,minZ-.055f,.92f,2.0f,.12f,.30f,.19f,.13f);
         }
     }
     return 0;
@@ -695,6 +705,14 @@ static void rebuildBayreuthMap(void) {
     buildingColliderCount=0;
     loadTerrainTiles();
     vertexCount=0;
+    /* Emergency ground patch: leaving an interior must never expose only the blue sky. */
+    if(terrainTileCount==0) {
+        float gy=terrainHeight(playerX,playerZ)-.18f;
+        quad(V(playerX-640.0f,gy,playerZ-640.0f,.25f,.48f,.27f),
+             V(playerX+640.0f,gy,playerZ-640.0f,.25f,.48f,.27f),
+             V(playerX+640.0f,gy,playerZ+640.0f,.25f,.48f,.27f),
+             V(playerX-640.0f,gy,playerZ+640.0f,.25f,.48f,.27f));
+    }
     addTerrainMesh();
     addLandmarkModels();
     file=fopen("romfs:/bayreuth-tiles.bin","rb");
