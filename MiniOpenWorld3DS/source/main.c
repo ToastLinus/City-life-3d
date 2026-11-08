@@ -192,6 +192,42 @@ static int landmarkNear(float x,float z,float cx,float cz,float radius) {
     float dx=x-cx,dz=z-cz;
     return dx*dx+dz*dz<radius*radius;
 }
+/* Small low-poly village cats. Kept lightweight for the 3DS GPU. */
+static void catModel(float x,float z,float r,float g,float b,float variant) {
+    float y=terrainHeight(x,z);
+    /* Rounded-looking chunky body, head and curled tail. */
+    box(x,y+.08f,z,.72f,.38f,.48f,r,g,b);
+    box(x,y+.30f,z-.28f,.43f,.40f,.40f,r*.94f,g*.94f,b*.94f);
+    box(x+.37f,y+.22f,z+.17f,.16f,.12f,.46f,r*.82f,g*.82f,b*.82f);
+    /* Pointed ears. */
+    tri(V(x-.19f,y+.60f,z-.39f,r,g,b),V(x-.12f,y+.88f,z-.35f,r,g,b),V(x-.02f,y+.60f,z-.39f,r,g,b));
+    tri(V(x+.02f,y+.60f,z-.39f,r,g,b),V(x+.12f,y+.88f,z-.35f,r,g,b),V(x+.20f,y+.60f,z-.39f,r,g,b));
+    /* Bright eyes and a tiny nose make the face readable at 3DS scale. */
+    box(x-.09f,y+.49f,z-.485f,.055f,.07f,.025f,.08f,.09f,.10f);
+    box(x+.09f,y+.49f,z-.485f,.055f,.07f,.025f,.08f,.09f,.10f);
+    box(x,y+.40f,z-.495f,.07f,.045f,.025f,.92f,.48f,.56f);
+    (void)variant;
+}
+static void addUnterpreuschwitzCats(void) {
+    /* Village centre, using the same local projection as the OSM map. */
+    const float cx=-3672.1f, cz=1334.5f;
+    static const float offsets[12][2]={
+        {-29,-18},{-15,-25},{2,-19},{22,-14},
+        {-27,1},{-8,5},{12,8},{30,17},
+        {-19,25},{2,31},{21,27},{39,-2}
+    };
+    static const float coats[12][3]={
+        {.86f,.76f,.58f},{.36f,.38f,.42f},{.90f,.42f,.16f},{.92f,.90f,.82f},
+        {.20f,.20f,.23f},{.72f,.48f,.27f},{.72f,.73f,.76f},{.92f,.86f,.70f},
+        {.34f,.25f,.19f},{.94f,.48f,.20f},{.82f,.82f,.78f},{.22f,.22f,.25f}
+    };
+    for(int i=0;i<12;i++) {
+        float x=cx+offsets[i][0], z=cz+offsets[i][1];
+        if(landmarkNear(playerX,playerZ,x,z,68.0f))
+            catModel(x,z,coats[i][0],coats[i][1],coats[i][2],(float)i);
+    }
+}
+
 /* Custom low-poly landmarks are added only when the player is nearby.
    Coordinates use the same local Bayreuth projection as the OSM tiles. */
 static void addLandmarkModels(void) {
@@ -263,6 +299,7 @@ static void addLandmarkModels(void) {
         box(sx,sy+.12f,sz,5.5f,.18f,5.5f,.52f,.46f,.34f);
     }
     /* Unterpreuschwitz keeps its real OSM road and house footprints; no invented blocks. */
+    addUnterpreuschwitzCats();
 }
 static void addInteriorScene(void) {
     if(interiorMode==1) {
