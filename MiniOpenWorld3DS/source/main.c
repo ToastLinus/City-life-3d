@@ -769,6 +769,14 @@ int main(void) {
                 scooterYaw=-cameraYaw;
             }
         }
+        if(interiorMode) {
+            float sideLimit=interiorMode==1?11.5f:17.5f;
+            if(playerX < -sideLimit) playerX=-sideLimit;
+            if(playerX > sideLimit) playerX=sideLimit;
+            if(playerZ < -9.4f) playerZ=-9.4f;
+            /* Keep the south doorway open; elsewhere the shop wall blocks passage. */
+            if(playerZ > 10.0f && fabsf(playerX)>2.8f) playerZ=10.0f;
+        }
         /* Tree trunks block walking, scooter and car movement. */
         float collisionRadius=riding==2?0.95f:(riding==1?0.48f:0.34f);
         if(hitsTree(playerX,playerZ,collisionRadius)) {
